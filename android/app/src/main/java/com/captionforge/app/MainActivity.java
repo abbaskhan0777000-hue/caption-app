@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -22,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 101;
@@ -89,10 +92,22 @@ public class MainActivity extends AppCompatActivity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
+        // Official Google WebViewAssetLoader: Serves static Next.js assets under standard HTTPS domain with CSS & JS support
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .addPathHandler("/res/", new WebViewAssetLoader.ResourcesPathHandler(this))
+                .build();
+
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+        });
+
         // Attach JavaScript Native Bridge
         webView.addJavascriptInterface(new WebAppInterface(), "AndroidBridge");
 
-        webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
@@ -112,8 +127,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Load self-contained local bundled studio web app
-        webView.loadUrl("file:///android_asset/web/index.html");
+        // Load studio with full CSS/JS styling
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
     }
 
     public class WebAppInterface {
