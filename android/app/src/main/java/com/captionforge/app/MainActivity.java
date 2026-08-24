@@ -8,6 +8,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -25,13 +27,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private static final int PERMISSION_REQUEST_CODE = 101;
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
@@ -202,6 +210,7 @@ public class MainActivity extends AppCompatActivity {
                 currentUploadStream = new FileOutputStream(currentUploadFile);
                 return true;
             } catch (Exception e) {
+                Log.e(TAG, "Error in startVideoUpload", e);
                 return false;
             }
         }
@@ -210,12 +219,13 @@ public class MainActivity extends AppCompatActivity {
         public boolean appendVideoChunk(String base64Chunk) {
             try {
                 if (currentUploadStream != null) {
-                    byte[] bytes = android.util.Base64.decode(base64Chunk, android.util.Base64.DEFAULT);
+                    byte[] bytes = Base64.decode(base64Chunk, Base64.DEFAULT);
                     currentUploadStream.write(bytes);
                     return true;
                 }
                 return false;
             } catch (Exception e) {
+                Log.e(TAG, "Error in appendVideoChunk", e);
                 return false;
             }
         }
@@ -230,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return currentUploadFile != null ? currentUploadFile.getAbsolutePath() : null;
             } catch (Exception e) {
+                Log.e(TAG, "Error in finishVideoUpload", e);
                 return null;
             }
         }
@@ -264,6 +275,79 @@ public class MainActivity extends AppCompatActivity {
                     });
                 }
             });
+        }
+
+        /**
+         * Native Java Groq Whisper Transcription (Bypasses WebView CORS completely)
+         */
+        @JavascriptInterface
+        public void transcribeAudioNative(String base64Wav, String apiKey) {
+            new Thread(() -> {
+                try {
+                    byte[] audioBytes = Base64.decode(base64Wav, Base64.DEFAULT);
+                    String boundary = "===" + System.currentTimeMillis() + "===";
+                    URL url = new URL("https://api.groq.com/openai/v1/audio/transcriptions");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Authorization", "Bearer " + apiKey.trim());
+                    conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+                    try (DataOutputStream os = new DataOutputStream(conn.getOutputStream())) {
+                        // model param
+                        os.writeBytes("--" + boundary + "\r\n");
+                        os.writeBytes("Content-Disposition: form-data; name=\"model\"\r\n\r\n");
+                        os.writeBytes("whisper-large-v3-turbo\r\n");
+
+                        // response_format param
+                        os.writeBytes("--" + boundary + "\r\n");
+                        os.writeBytes("Content-Disposition: form-data; name=\"response_format\"\r\n\r\n");
+                        os.writeBytes("verbose_json\r\n");
+
+                        // timestamp_granularities param
+                        os.writeBytes("--" + boundary + "\r\n");
+                        os.writeBytes("Content-Disposition: form-data; name=\"timestamp_granularities[]\"\r\n\r\n");
+                        os.writeBytes("word\r\n");
+
+                        // file param
+                        os.writeBytes("--" + boundary + "\r\n");
+                        os.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\r\n");
+                        os.writeBytes("Content-Type: audio/wav\r\n\r\n");
+                        os.write(audioBytes);
+                        os.writeBytes("\r\n");
+
+                        os.writeBytes("--" + boundary + "--\r\n");
+                        os.flush();
+                    }
+
+                    int status = conn.getResponseCode();
+                    InputStream stream = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+
+                    String respStr = response.toString();
+                    if (status >= 200 && status < 300) {
+                        runOnUiThread(() -> {
+                            webView.evaluateJavascript("window.onNativeTranscribeSuccess && window.onNativeTranscribeSuccess(" + respStr + ");", null);
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            webView.evaluateJavascript("window.onNativeTranscribeError && window.onNativeTranscribeError('" + respStr.replace("'", "\\'") + "');", null);
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Native transcription error", e);
+                    runOnUiThread(() -> {
+                        webView.evaluateJavascript("window.onNativeTranscribeError && window.onNativeTranscribeError('" + e.getMessage() + "');", null);
+                    });
+                }
+            }).start();
         }
     }
 

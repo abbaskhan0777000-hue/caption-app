@@ -206,28 +206,52 @@ export default function Home() {
         throw new Error('Groq API Key is required. Please set your Groq API key in the top settings bar.');
       }
 
-      const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.wav');
-      formData.append('model', 'whisper-large-v3-turbo');
-      formData.append('response_format', 'verbose_json');
-      formData.append('timestamp_granularities[]', 'word');
-      formData.append('temperature', '0.0');
+      let wordsData: any[] = [];
 
-      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey.trim()}`,
-        },
-        body: formData,
-      });
+      // If running on Native Android, use direct Java network engine (0 CORS issues)
+      if (isNativeAndroidApp() && (window as any).AndroidBridge?.transcribeAudioNative) {
+        setTranscribeStatus('Transcribing via Android Native Whisper Engine...');
+        const buffer = await audioBlob.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const base64Wav = btoa(binary);
 
-      const data = await response.json();
+        const nativeResult: any = await new Promise((resolve, reject) => {
+          (window as any).onNativeTranscribeSuccess = (data: any) => resolve(data);
+          (window as any).onNativeTranscribeError = (err: string) => reject(new Error(err));
+          (window as any).AndroidBridge.transcribeAudioNative(base64Wav, apiKey.trim());
+        });
 
-      if (!response.ok) {
-        throw new Error(data.error?.message || data.error || 'Groq transcription failed.');
+        wordsData = nativeResult.words || [];
+      } else {
+        // Standard Web Fetch Fallback
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'audio.wav');
+        formData.append('model', 'whisper-large-v3-turbo');
+        formData.append('response_format', 'verbose_json');
+        formData.append('timestamp_granularities[]', 'word');
+        formData.append('temperature', '0.0');
+
+        const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey.trim()}`,
+          },
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error?.message || data.error || 'Groq transcription failed.');
+        }
+
+        wordsData = data.words || [];
       }
 
-      const wordsData = data.words || [];
       const parsedWords: WordCaption[] = wordsData.map((item: any, idx: number) => ({
         id: `w-${idx}-${Math.random().toString(36).substring(2, 7)}`,
         word: item.word?.trim() || '',
