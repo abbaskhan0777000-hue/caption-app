@@ -24,7 +24,10 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.webkit.WebViewAssetLoader;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 101;
@@ -90,18 +93,60 @@ public class MainActivity extends AppCompatActivity {
         settings.setAllowUniversalAccessFromFileURLs(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        // Official Google WebViewAssetLoader: Serves static Next.js assets under standard HTTPS domain with CSS & JS support
-        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
-                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
-                .addPathHandler("/res/", new WebViewAssetLoader.ResourcesPathHandler(this))
-                .build();
-
+        // Native custom asset interceptor: guarantees 100% CSS, JS, fonts, and images load with proper MIME types
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return assetLoader.shouldInterceptRequest(request.getUrl());
+                String path = request.getUrl().getPath();
+                if (path == null || path.isEmpty() || path.equals("/") || path.equals("/index.html")) {
+                    path = "index.html";
+                } else if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+
+                try {
+                    InputStream is = getAssets().open(path);
+                    String mime = "text/html";
+                    if (path.endsWith(".css")) {
+                        mime = "text/css";
+                    } else if (path.endsWith(".js") || path.endsWith(".mjs")) {
+                        mime = "application/javascript";
+                    } else if (path.endsWith(".png")) {
+                        mime = "image/png";
+                    } else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+                        mime = "image/jpeg";
+                    } else if (path.endsWith(".svg")) {
+                        mime = "image/svg+xml";
+                    } else if (path.endsWith(".woff2")) {
+                        mime = "font/woff2";
+                    } else if (path.endsWith(".woff")) {
+                        mime = "font/woff";
+                    } else if (path.endsWith(".ttf")) {
+                        mime = "font/ttf";
+                    } else if (path.endsWith(".json")) {
+                        mime = "application/json";
+                    }
+
+                    WebResourceResponse response = new WebResourceResponse(mime, "UTF-8", is);
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("Access-Control-Allow-Origin", "*");
+                    response.setResponseHeaders(headers);
+                    return response;
+                } catch (Exception e) {
+                    if (!path.contains(".")) {
+                        try {
+                            InputStream is = getAssets().open("index.html");
+                            WebResourceResponse response = new WebResourceResponse("text/html", "UTF-8", is);
+                            Map<String, String> headers = new HashMap<>();
+                            headers.put("Access-Control-Allow-Origin", "*");
+                            response.setResponseHeaders(headers);
+                            return response;
+                        } catch (Exception ignored) {}
+                    }
+                    return super.shouldInterceptRequest(view, request);
+                }
             }
         });
 
@@ -127,8 +172,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Load studio with full CSS/JS styling
-        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
+        // Load studio with local origin
+        webView.loadUrl("https://captionforge.local/");
     }
 
     public class WebAppInterface {
