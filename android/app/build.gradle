@@ -53,5 +53,5 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.10.0'
     
     // Native Hardware C++ Video Engine (FFmpegKit with Full Subtitle & Hardware Codecs)
-    implementation 'com.arthenica:ffmpeg-kit-full:6.0-2'
+    implementation 'io.github.maitrungduc1410:ffmpeg-kit-full:7.1.5'
 }
