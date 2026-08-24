@@ -202,28 +202,41 @@ export default function Home() {
 
       setTranscribeStatus('Sending to Groq Whisper Large v3 Turbo...');
 
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'audio.wav');
-      if (apiKey) {
-        formData.append('apiKey', apiKey);
+      if (!apiKey || apiKey.trim() === '') {
+        throw new Error('Groq API Key is required. Please set your Groq API key in the top settings bar.');
       }
 
-      const response = await fetch('/api/transcribe', {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.wav');
+      formData.append('model', 'whisper-large-v3-turbo');
+      formData.append('response_format', 'verbose_json');
+      formData.append('timestamp_granularities[]', 'word');
+      formData.append('temperature', '0.0');
+
+      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey.trim()}`,
+        },
         body: formData,
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.missingKey) {
-          throw new Error('Groq API Key is required. Please set your Groq API key in the top settings bar.');
-        }
-        throw new Error(data.error || 'Transcription failed.');
+        throw new Error(data.error?.message || data.error || 'Groq transcription failed.');
       }
 
-      if (data.words && data.words.length > 0) {
-        setWords(data.words);
+      const wordsData = data.words || [];
+      const parsedWords: WordCaption[] = wordsData.map((item: any, idx: number) => ({
+        id: `w-${idx}-${Math.random().toString(36).substring(2, 7)}`,
+        word: item.word?.trim() || '',
+        start: Number(item.start) || 0,
+        end: Number(item.end) || 0,
+      })).filter((w: WordCaption) => w.word.length > 0);
+
+      if (parsedWords.length > 0) {
+        setWords(parsedWords);
         setTranscribeStatus('Transcription complete!');
       } else {
         throw new Error('No speech detected in the audio track.');

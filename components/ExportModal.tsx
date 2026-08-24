@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { WordCaption, CaptionStyleConfig, VideoMetadata, ExportSettings, ExportResolution, ExportFps, ExportBitrate, ExportAspectRatio, ExportSpeed } from '@/lib/types';
 import { renderVideoWithCaptionsInBrowser } from '@/lib/videoRenderer';
 import { isNativeAndroidApp, renderWithAndroidHardware } from '@/lib/nativeBridge';
+import { generateAssSubtitles, generateSrtSubtitles, generateVttSubtitles } from '@/lib/assGenerator';
 import {
   Download,
   CheckCircle,
@@ -81,19 +82,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       if (isNativeAndroidApp()) {
         setStatusText('Starting Android Native Hardware GPU Encoder...');
         
-        // Fetch generated .ass content
-        const assRes = await fetch('/api/export-subtitles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            words,
-            style,
-            format: 'ass',
-            width: metadata?.width || 1280,
-            height: metadata?.height || 720,
-          }),
-        });
-        const assContent = await assRes.text();
+        // Generate .ass subtitles directly in client
+        const assContent = generateAssSubtitles(
+          words,
+          style,
+          metadata?.width || 1280,
+          metadata?.height || 720
+        );
 
         const nativeResult = await renderWithAndroidHardware({
           assContent,
@@ -139,27 +134,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     }
   };
 
-  const handleDownloadSubtitles = async (format: 'ass' | 'srt' | 'vtt') => {
+  const handleDownloadSubtitles = (format: 'ass' | 'srt' | 'vtt') => {
     try {
-      const res = await fetch('/api/export-subtitles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          words,
-          style,
-          format,
-          width: metadata?.width || 1280,
-          height: metadata?.height || 720,
-        }),
-      });
+      let fileContent = '';
+      let mimeType = 'text/plain';
+      const filename = `captionforge_${format}_subtitles.${format}`;
 
-      if (!res.ok) throw new Error('Failed to generate subtitles.');
+      if (format === 'ass') {
+        fileContent = generateAssSubtitles(words, style, metadata?.width || 1280, metadata?.height || 720);
+        mimeType = 'text/x-ssa';
+      } else if (format === 'srt') {
+        fileContent = generateSrtSubtitles(words, style.wordsPerChunk || 4);
+        mimeType = 'application/x-subrip';
+      } else if (format === 'vtt') {
+        fileContent = generateVttSubtitles(words, style.wordsPerChunk || 4);
+        mimeType = 'text/vtt';
+      }
 
-      const blob = await res.blob();
+      const blob = new Blob([fileContent], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `captionforge_${format}_subtitles.${format}`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
