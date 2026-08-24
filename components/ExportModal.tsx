@@ -25,6 +25,7 @@ interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   videoElement: HTMLVideoElement | null;
+  videoFile?: File | null;
   words: WordCaption[];
   style: CaptionStyleConfig;
   metadata: VideoMetadata | null;
@@ -34,6 +35,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   isOpen,
   onClose,
   videoElement,
+  videoFile,
   words,
   style,
   metadata,
@@ -90,16 +92,25 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           metadata?.height || 720
         );
 
-        const nativeResult = await renderWithAndroidHardware({
-          assContent,
-          resolution,
-          fps,
-        });
+        const nativeResult = await renderWithAndroidHardware(
+          {
+            videoFile: videoFile,
+            assContent,
+            resolution,
+            fps,
+          },
+          (prog, status) => {
+            setProgress(prog);
+            if (status) setStatusText(status);
+          }
+        );
 
         if (nativeResult.success && nativeResult.outputPath) {
           setExportedUrl(nativeResult.outputPath);
           setIsExporting(false);
           return;
+        } else if (nativeResult.error) {
+          throw new Error(nativeResult.error);
         }
       }
 

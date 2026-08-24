@@ -25,6 +25,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 101;
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+
+    private File currentUploadFile = null;
+    private FileOutputStream currentUploadStream = null;
 
     private final ActivityResultLauncher<Intent> filePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -95,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        // Native custom asset interceptor: guarantees 100% CSS, JS, fonts, and images load with proper MIME types
+        // Intercept all web requests and stream directly from assets with accurate MIME types
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -104,6 +109,11 @@ public class MainActivity extends AppCompatActivity {
                     path = "index.html";
                 } else if (path.startsWith("/")) {
                     path = path.substring(1);
+                }
+
+                // Handle both _next and next_assets mappings
+                if (path.startsWith("_next/")) {
+                    path = "next_assets/" + path.substring(6);
                 }
 
                 try {
@@ -180,6 +190,48 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public boolean isNative() {
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean startVideoUpload(String filename) {
+            try {
+                if (currentUploadStream != null) {
+                    currentUploadStream.close();
+                }
+                currentUploadFile = new File(getCacheDir(), "input_" + System.currentTimeMillis() + "_" + filename);
+                currentUploadStream = new FileOutputStream(currentUploadFile);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public boolean appendVideoChunk(String base64Chunk) {
+            try {
+                if (currentUploadStream != null) {
+                    byte[] bytes = android.util.Base64.decode(base64Chunk, android.util.Base64.DEFAULT);
+                    currentUploadStream.write(bytes);
+                    return true;
+                }
+                return false;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public String finishVideoUpload() {
+            try {
+                if (currentUploadStream != null) {
+                    currentUploadStream.flush();
+                    currentUploadStream.close();
+                    currentUploadStream = null;
+                }
+                return currentUploadFile != null ? currentUploadFile.getAbsolutePath() : null;
+            } catch (Exception e) {
+                return null;
+            }
         }
 
         @JavascriptInterface

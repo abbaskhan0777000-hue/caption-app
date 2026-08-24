@@ -519,6 +519,7 @@ export default function Home() {
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         videoElement={videoRef.current}
+        videoFile={videoFile}
         words={words}
         style={style}
         metadata={metadata}

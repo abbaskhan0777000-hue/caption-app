@@ -20,6 +20,11 @@ android {
         }
     }
 
+    androidResources {
+        ignoreAssetsPattern "!.svn:!.git:!.ds_store:!*.scc:.*:!_*"
+        noCompress 'css', 'js', 'html', 'json', 'svg', 'png', 'jpg', 'ttf', 'woff2'
+    }
+
     buildTypes {
         release {
             minifyEnabled false

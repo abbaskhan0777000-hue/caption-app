@@ -19,10 +19,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: 🔨 Compile CaptionForge Studio
+      - name: 🔨 Compile CaptionForge Studio & Patch Assets for Android
         run: |
           npm install
           npm run build
+          if [ -d "out/_next" ]; then
+            mv out/_next out/next_assets
+            find out -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i 's/_next/next_assets/g' {} +
+          fi
           mkdir -p android/app/src/main/assets
           cp -r out/* android/app/src/main/assets/
 
