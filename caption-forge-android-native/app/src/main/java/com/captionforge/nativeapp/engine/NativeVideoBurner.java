@@ -3,6 +3,13 @@ package com.captionforge.nativeapp.engine;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -18,10 +25,11 @@ import com.captionforge.nativeapp.model.WordCaption;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class NativeVideoBurner {
     private static final String TAG = "NativeVideoBurner";
@@ -30,6 +38,18 @@ public class NativeVideoBurner {
         void onProgress(int percentage);
         void onSuccess(String galleryLocation);
         void onError(String error);
+    }
+
+    private static class OverlayFrame {
+        File imageFile;
+        double startTime;
+        double endTime;
+
+        OverlayFrame(File file, double start, double end) {
+            this.imageFile = file;
+            this.startTime = start;
+            this.endTime = end;
+        }
     }
 
     public static void burnCaptionsToGallery(
@@ -41,15 +61,18 @@ public class NativeVideoBurner {
             BurnCallback callback
     ) {
         new Thread(() -> {
-            File subFile = null;
             File tempInput = null;
             File tempOutput = null;
+            List<OverlayFrame> frames = new ArrayList<>();
+            File overlaysDir = null;
 
             try {
-                // 1. Copy video from Uri to app internal cache
                 File cacheDir = context.getCacheDir();
-                tempInput = new File(cacheDir, "input_render_" + System.currentTimeMillis() + ".mp4");
+                overlaysDir = new File(cacheDir, "overlays_" + System.currentTimeMillis());
+                overlaysDir.mkdirs();
 
+                // 1. Copy video from Uri to app internal cache
+                tempInput = new File(cacheDir, "input_render_" + System.currentTimeMillis() + ".mp4");
                 try (InputStream in = context.getContentResolver().openInputStream(inputVideoUri);
                      OutputStream out = new FileOutputStream(tempInput)) {
                     byte[] buffer = new byte[1024 * 64];
@@ -60,89 +83,223 @@ public class NativeVideoBurner {
                     out.flush();
                 }
 
-                // 2. Generate .ASS Subtitle File
                 int outWidth = "1080p".equalsIgnoreCase(resolution) ? 1080 : 720;
                 int outHeight = "1080p".equalsIgnoreCase(resolution) ? 1920 : 1280;
 
-                String assContent = AssGenerator.generateAss(words, style, outWidth, outHeight);
-                subFile = new File(cacheDir, "captions_" + System.currentTimeMillis() + ".ass");
-                try (FileOutputStream fos = new FileOutputStream(subFile)) {
-                    fos.write(assContent.getBytes("UTF-8"));
+                // 2. Generate Hardware Bitmap Overlays for every caption event
+                if (words != null && !words.isEmpty()) {
+                    List<AssGenerator.CaptionChunk> chunks = AssGenerator.chunkWords(words, style.wordsPerChunk);
+                    int frameIndex = 0;
+
+                    for (AssGenerator.CaptionChunk chunk : chunks) {
+                        if (chunk.words.isEmpty()) continue;
+
+                        if ("karaoke".equalsIgnoreCase(style.animationPreset) || "pop".equalsIgnoreCase(style.animationPreset)) {
+                            for (WordCaption activeWord : chunk.words) {
+                                Bitmap bmp = renderCaptionBitmap(outWidth, outHeight, chunk, activeWord, style);
+                                File imgFile = new File(overlaysDir, "frame_" + frameIndex + ".png");
+                                try (FileOutputStream fos = new FileOutputStream(imgFile)) {
+                                    bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                                }
+                                bmp.recycle();
+
+                                double start = Math.max(0, activeWord.getStart());
+                                double end = activeWord.getEnd() + 0.1;
+                                frames.add(new OverlayFrame(imgFile, start, end));
+                                frameIndex++;
+                            }
+                        } else {
+                            Bitmap bmp = renderCaptionBitmap(outWidth, outHeight, chunk, null, style);
+                            File imgFile = new File(overlaysDir, "frame_" + frameIndex + ".png");
+                            try (FileOutputStream fos = new FileOutputStream(imgFile)) {
+                                bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                            }
+                            bmp.recycle();
+
+                            double start = Math.max(0, chunk.start);
+                            double end = chunk.end + 0.25;
+                            frames.add(new OverlayFrame(imgFile, start, end));
+                            frameIndex++;
+                        }
+                    }
                 }
 
-                // 3. Prepare Internal Destination
                 tempOutput = new File(cacheDir, "rendered_" + System.currentTimeMillis() + ".mp4");
 
-                // 4. Construct FFmpeg command with proper escaping and yuv420p format
-                String escapedSubPath = subFile.getAbsolutePath().replace("\\", "/").replace(":", "\\:").replace("'", "\\'");
-                
-                String[] args = new String[]{
-                        "-y",
-                        "-i", tempInput.getAbsolutePath(),
-                        "-vf", "ass=" + escapedSubPath,
-                        "-c:v", "libx264",
-                        "-preset", "ultrafast",
-                        "-crf", "22",
-                        "-pix_fmt", "yuv420p",
-                        "-c:a", "aac",
-                        "-b:a", "192k",
-                        tempOutput.getAbsolutePath()
-                };
+                // 3. Assemble FFmpeg Hardware Encoding Command
+                List<String> cmdArgs = new ArrayList<>();
+                cmdArgs.add("-y");
+                cmdArgs.add("-i");
+                cmdArgs.add(tempInput.getAbsolutePath());
 
-                Log.d(TAG, "Running Native FFmpeg with ass filter");
-                FFmpegSession session = FFmpegKit.executeWithArguments(args);
-
-                // Fallback to subtitles filter if ass fails
-                if (!ReturnCode.isSuccess(session.getReturnCode())) {
-                    Log.w(TAG, "ass filter failed, retrying with subtitles filter...");
-                    String[] fallbackArgs = new String[]{
-                            "-y",
-                            "-i", tempInput.getAbsolutePath(),
-                            "-vf", "subtitles=" + escapedSubPath,
-                            "-c:v", "libx264",
-                            "-preset", "ultrafast",
-                            "-crf", "22",
-                            "-pix_fmt", "yuv420p",
-                            "-c:a", "aac",
-                            "-b:a", "192k",
-                            tempOutput.getAbsolutePath()
-                    };
-                    session = FFmpegKit.executeWithArguments(fallbackArgs);
+                for (OverlayFrame frame : frames) {
+                    cmdArgs.add("-i");
+                    cmdArgs.add(frame.imageFile.getAbsolutePath());
                 }
+
+                if (!frames.isEmpty()) {
+                    StringBuilder filter = new StringBuilder();
+                    String lastStream = "0:v";
+
+                    for (int i = 0; i < frames.size(); i++) {
+                        OverlayFrame frame = frames.get(i);
+                        String currentStream = (i == frames.size() - 1) ? "outv" : ("v" + (i + 1));
+                        int inputIdx = i + 1;
+                        filter.append(String.format(Locale.US,
+                                "[%s][%d:v]overlay=0:0:enable='between(t,%.2f,%.2f)'[%s]",
+                                lastStream, inputIdx, frame.startTime, frame.endTime, currentStream));
+
+                        if (i < frames.size() - 1) {
+                            filter.append(";");
+                        }
+                        lastStream = currentStream;
+                    }
+
+                    cmdArgs.add("-filter_complex");
+                    cmdArgs.add(filter.toString());
+                    cmdArgs.add("-map");
+                    cmdArgs.add("[outv]");
+                } else {
+                    cmdArgs.add("-map");
+                    cmdArgs.add("0:v");
+                }
+
+                cmdArgs.add("-map");
+                cmdArgs.add("0:a?");
+                cmdArgs.add("-c:v");
+                cmdArgs.add("libx264");
+                cmdArgs.add("-preset");
+                cmdArgs.add("ultrafast");
+                cmdArgs.add("-crf");
+                cmdArgs.add("22");
+                cmdArgs.add("-pix_fmt");
+                cmdArgs.add("yuv420p");
+                cmdArgs.add("-c:a");
+                cmdArgs.add("aac");
+                cmdArgs.add("-b:a");
+                cmdArgs.add("192k");
+                cmdArgs.add(tempOutput.getAbsolutePath());
+
+                Log.d(TAG, "Running Native Canvas Overlay FFmpeg: total frames=" + frames.size());
+                String[] argsArray = cmdArgs.toArray(new String[0]);
+                FFmpegSession session = FFmpegKit.executeWithArguments(argsArray);
 
                 if (ReturnCode.isSuccess(session.getReturnCode())) {
                     Log.i(TAG, "Render Succeeded. Inserting to MediaStore Gallery...");
-
                     String savedName = saveToGallery(context, tempOutput);
-
-                    // Clean up temp files
-                    if (subFile != null && subFile.exists()) subFile.delete();
-                    if (tempInput != null && tempInput.exists()) tempInput.delete();
-                    if (tempOutput != null && tempOutput.exists()) tempOutput.delete();
-
+                    cleanup(tempInput, tempOutput, frames, overlaysDir);
                     callback.onSuccess(savedName);
                 } else {
-                    String logs = session.getAllLogsAsString();
-                    if (logs == null || logs.trim().isEmpty()) {
-                        logs = session.getOutput();
+                    String fullLog = session.getAllLogsAsString();
+                    if (fullLog == null || fullLog.trim().isEmpty()) {
+                        fullLog = session.getOutput();
                     }
-                    Log.e(TAG, "FFmpeg failed: " + logs);
+                    String errorDetail = (fullLog != null && fullLog.length() > 600)
+                            ? fullLog.substring(fullLog.length() - 600)
+                            : (fullLog != null ? fullLog : "Unknown error");
 
-                    if (subFile != null && subFile.exists()) subFile.delete();
-                    if (tempInput != null && tempInput.exists()) tempInput.delete();
-                    if (tempOutput != null && tempOutput.exists()) tempOutput.delete();
-
-                    callback.onError("Encoding failed: " + (logs != null ? logs : "Unknown error"));
+                    Log.e(TAG, "FFmpeg failed: " + fullLog);
+                    cleanup(tempInput, tempOutput, frames, overlaysDir);
+                    callback.onError("Encoding error: " + errorDetail);
                 }
 
             } catch (Exception e) {
                 Log.e(TAG, "Burn error", e);
-                if (subFile != null && subFile.exists()) subFile.delete();
-                if (tempInput != null && tempInput.exists()) tempInput.delete();
-                if (tempOutput != null && tempOutput.exists()) tempOutput.delete();
+                cleanup(tempInput, tempOutput, frames, overlaysDir);
                 callback.onError("Render exception: " + e.getMessage());
             }
         }).start();
+    }
+
+    private static Bitmap renderCaptionBitmap(int width, int height, AssGenerator.CaptionChunk chunk, WordCaption activeWord, CaptionStyle style) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        float textSizePx = (style.fontSize / 720f) * width * 0.95f;
+        Typeface tf = Typeface.create(style.fontFamily, Typeface.BOLD);
+
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(textSizePx);
+        textPaint.setColor(style.textColor);
+        textPaint.setTypeface(tf);
+
+        Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        strokePaint.setStyle(Paint.Style.STROKE);
+        strokePaint.setTextAlign(Paint.Align.CENTER);
+        strokePaint.setTextSize(textSizePx);
+        strokePaint.setColor(style.strokeColor);
+        strokePaint.setStrokeWidth(style.strokeWidth * (width / 720f) * 1.5f);
+        strokePaint.setTypeface(tf);
+
+        Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        highlightPaint.setTextAlign(Paint.Align.CENTER);
+        highlightPaint.setTextSize(textSizePx);
+        highlightPaint.setColor(style.highlightColor);
+        highlightPaint.setTypeface(tf);
+
+        Paint bgBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bgBoxPaint.setStyle(Paint.Style.FILL);
+
+        float centerY = (style.positionYPercent / 100f) * height;
+
+        StringBuilder fullLine = new StringBuilder();
+        for (WordCaption w : chunk.words) {
+            fullLine.append(w.getWord().toUpperCase()).append(" ");
+        }
+        String fullText = fullLine.toString().trim();
+        float totalLineWidth = textPaint.measureText(fullText);
+
+        if (style.backgroundColor != 0 && style.backgroundColor != Color.TRANSPARENT) {
+            bgBoxPaint.setColor(style.backgroundColor);
+            Rect bounds = new Rect();
+            textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
+            float padX = 32f * (width / 720f);
+            float padY = 20f * (width / 720f);
+            RectF boxRect = new RectF(
+                    (width - totalLineWidth) / 2f - padX,
+                    centerY + bounds.top - padY,
+                    (width + totalLineWidth) / 2f + padX,
+                    centerY + bounds.bottom + padY
+            );
+            canvas.drawRoundRect(boxRect, 20f, 20f, bgBoxPaint);
+        }
+
+        float startX = (width - totalLineWidth) / 2f;
+        float currentX = startX;
+
+        for (WordCaption w : chunk.words) {
+            String wordText = w.getWord().toUpperCase();
+            float wordWidth = textPaint.measureText(wordText + " ");
+            boolean isActive = (activeWord != null && activeWord == w);
+            Paint fillPaint = isActive ? highlightPaint : textPaint;
+
+            float drawX = currentX + (textPaint.measureText(wordText) / 2f);
+
+            if (style.strokeWidth > 0) {
+                canvas.drawText(wordText, drawX, centerY, strokePaint);
+            }
+            canvas.drawText(wordText, drawX, centerY, fillPaint);
+
+            currentX += wordWidth;
+        }
+
+        return bitmap;
+    }
+
+    private static void cleanup(File tempInput, File tempOutput, List<OverlayFrame> frames, File overlaysDir) {
+        if (tempInput != null && tempInput.exists()) tempInput.delete();
+        if (tempOutput != null && tempOutput.exists()) tempOutput.delete();
+        if (frames != null) {
+            for (OverlayFrame f : frames) {
+                if (f.imageFile != null && f.imageFile.exists()) {
+                    f.imageFile.delete();
+                }
+            }
+        }
+        if (overlaysDir != null && overlaysDir.exists()) {
+            overlaysDir.delete();
+        }
     }
 
     private static String saveToGallery(Context context, File sourceFile) throws Exception {
