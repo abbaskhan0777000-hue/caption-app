@@ -62,7 +62,7 @@
 
     <!-- Progress Bar -->
     <ProgressBar
-        android:id="@+id/pbExportProgress"
+        android:id="@+id/pbExport"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="8dp"
@@ -84,7 +84,7 @@
         android:visibility="gone" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnStartExport"
+        android:id="@+id/btnStartRender"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginTop="20dp"

@@ -13,11 +13,24 @@
     <color name="dark_button_pressed">#0F172A</color>
     <color name="dark_card_bg">#2A2C32</color>
 
+    <!-- Legacy / System Theme Compatibility Tokens -->
+    <color name="bg_dark">#FFFFFF</color>
+    <color name="bg_surface">#F8FAFC</color>
+    <color name="bg_surface_card">#FFFFFF</color>
+    <color name="border_surface">#E2E8F0</color>
+    <color name="primary_400">#818CF8</color>
+    <color name="primary_500">#6366F1</color>
+    <color name="primary_600">#4F46E5</color>
+    <color name="primary_700">#4338CA</color>
+
     <!-- Accents & Active Highlights -->
     <color name="primary_purple">#8B5CF6</color>
     <color name="accent_yellow">#FACC15</color>
     <color name="accent_green">#22C55E</color>
     <color name="accent_blue">#38BDF8</color>
+    <color name="accent_cyan">#06B6D4</color>
+    <color name="accent_pink">#EC4899</color>
+    <color name="accent_orange">#F97316</color>
     <color name="accent_red">#EF4444</color>
 
     <!-- Typography -->
