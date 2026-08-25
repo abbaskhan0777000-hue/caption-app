@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -83,8 +84,36 @@ public class NativeVideoBurner {
                     out.flush();
                 }
 
-                int outWidth = "1080p".equalsIgnoreCase(resolution) ? 1080 : 720;
-                int outHeight = "1080p".equalsIgnoreCase(resolution) ? 1920 : 1280;
+                // 2. Extract Exact Video Width & Height to match Overlay 1:1
+                int outWidth = 720;
+                int outHeight = 1280;
+
+                try {
+                    MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                    retriever.setDataSource(tempInput.getAbsolutePath());
+                    String widthStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                    String heightStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+                    String rotationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+                    retriever.release();
+
+                    if (widthStr != null && heightStr != null) {
+                        int rawW = Integer.parseInt(widthStr);
+                        int rawH = Integer.parseInt(heightStr);
+                        int rotation = (rotationStr != null) ? Integer.parseInt(rotationStr) : 0;
+                        if (rotation == 90 || rotation == 270) {
+                            outWidth = rawH;
+                            outHeight = rawW;
+                        } else {
+                            outWidth = rawW;
+                            outHeight = rawH;
+                        }
+                    }
+                } catch (Exception ignored) {
+                    outWidth = "1080p".equalsIgnoreCase(resolution) ? 1080 : 720;
+                    outHeight = "1080p".equalsIgnoreCase(resolution) ? 1920 : 1280;
+                }
+
+                Log.d(TAG, "Target video dimensions: " + outWidth + "x" + outHeight);
 
                 // 2. Generate Hardware Bitmap Overlays for every caption event
                 if (words != null && !words.isEmpty()) {
