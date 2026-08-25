@@ -4,533 +4,304 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_dark">
+    android:background="@color/bg_app">
 
-    <!-- Top Action Bar -->
+    <!-- Top Navigation Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:background="@color/bg_surface"
-        android:paddingHorizontal="12dp"
+        android:paddingHorizontal="16dp"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="6dp"
+            android:src="@drawable/ic_back_arrow"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/text_primary" />
+
         <TextView
-            android:id="@+id/tvLogo"
+            android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CaptionForge"
-            android:textColor="@color/text_white"
+            android:fontFamily="sans-serif-medium"
+            android:text="AI Captions"
+            android:textColor="@color/text_primary"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:background="@color/bg_surface_card"
-            android:paddingHorizontal="6dp"
-            android:paddingVertical="2dp"
-            android:text="AI"
-            android:textColor="@color/accent_yellow"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="@id/tvLogo"
-            app:layout_constraintStart_toEndOf="@id/tvLogo"
-            app:layout_constraintTop_toTopOf="@id/tvLogo" />
-
-        <!-- Select Video Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSelectVideo"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:layout_marginEnd="6dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:paddingHorizontal="10dp"
-            android:text="Select Video"
-            android:textColor="@color/text_slate_200"
-            android:textSize="11sp"
-            app:cornerRadius="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnSettings"
-            app:layout_constraintTop_toTopOf="parent"
-            app:strokeColor="@color/border_surface" />
-
-        <!-- Settings Button -->
-        <ImageButton
-            android:id="@+id/btnSettings"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginEnd="6dp"
-            android:background="@color/bg_surface_light"
-            android:src="@android:drawable/ic_menu_preferences"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnExport"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- Export Button -->
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnExport"
             android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:backgroundTint="@color/accent_green"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:paddingHorizontal="12dp"
+            android:background="@drawable/bg_dark_pill"
+            android:gravity="center"
+            android:paddingHorizontal="20dp"
             android:text="Export"
             android:textColor="@color/text_white"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:textStyle="bold"
-            app:cornerRadius="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Center Video & Draggable Caption Canvas -->
-    <FrameLayout
-        android:id="@+id/videoContainer"
-        android:layout_width="match_parent"
+    <!-- Main Video Card Viewport -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardVideoContainer"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#000000"
-        app:layout_constraintBottom_toTopOf="@id/playerControls"
-        app:layout_constraintTop_toBottomOf="@id/topBar">
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#000000"
+        app:layout_constraintBottom_toTopOf="@+id/rvSegmentChips"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topBar">
 
-        <androidx.media3.ui.PlayerView
-            android:id="@+id/playerView"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:surface_type="surface_view"
-            app:use_controller="false" />
+            android:layout_height="match_parent">
 
-        <!-- Native Draggable/Pinchable Caption Overlay -->
-        <com.captionforge.nativeapp.ui.CaptionOverlayView
-            android:id="@+id/captionOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            <!-- ExoPlayer View -->
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/playerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:resize_mode="fit"
+                app:use_controller="false" />
 
-        <!-- Empty State Prompt -->
+            <!-- Real-time Subtitle Overlay Canvas -->
+            <com.captionforge.nativeapp.ui.CaptionOverlayView
+                android:id="@+id/captionOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Empty Video Picker Prompt -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyPrompt"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#0F172A"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:visibility="visible">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/ic_app_icon" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Tap to Select Video"
+                    android:textColor="@color/text_white"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="Import any reel or video to auto-generate viral captions"
+                    android:textColor="@color/text_slate_400"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/btnSelectVideoPrompt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_dark_pill"
+                    android:gravity="center"
+                    android:paddingHorizontal="24dp"
+                    android:text="Choose Video"
+                    android:textColor="@color/text_white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Transcribing Progress Overlay -->
+            <LinearLayout
+                android:id="@+id/layoutTranscribeLoading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#B3000000"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:indeterminateTint="@color/accent_yellow" />
+
+                <TextView
+                    android:id="@+id/tvTranscribeStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Generating AI Captions..."
+                    android:textColor="@color/text_white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Video Time Indicator (00:04 - 00:50) -->
+            <TextView
+                android:id="@+id/tvTimeCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginBottom="12dp"
+                android:text="00:00 - 00:00"
+                android:textColor="@color/text_white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@+id/videoProgressBar"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Video Progress Track -->
+            <ProgressBar
+                android:id="@+id/videoProgressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/bg_dark_pill"
+                android:progressTint="@color/primary_purple"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Horizontal Caption Segment Pills (Screenshot 1) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSegmentChips"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:clipToPadding="false"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toTopOf="@+id/bottomToolDivider"
+        tools:listitem="@layout/item_chip_segment" />
+
+    <!-- Divider Line -->
+    <View
+        android:id="@+id/bottomToolDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="12dp"
+        android:background="@color/border_subtle"
+        app:layout_constraintBottom_toTopOf="@+id/bottomToolsBar" />
+
+    <!-- Bottom Tool Bar (Edit Captions | Templates | Styles) -->
+    <LinearLayout
+        android:id="@+id/bottomToolsBar"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- 1. Edit Captions -->
         <LinearLayout
-            android:id="@+id/layoutEmptyPrompt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:id="@+id/tabEditCaptions"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:gravity="center"
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_menu_gallery" />
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_edit_captions"
+                app:tint="@color/text_primary" />
 
             <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Tap 'Select Video' to start"
-                android:textColor="@color/text_slate_400"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <!-- Transcription Loading Overlay -->
-        <LinearLayout
-            android:id="@+id/layoutTranscribeLoading"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/black_overlay"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <ProgressBar
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:indeterminate="true"
-                android:indeterminateTint="@color/accent_yellow" />
-
-            <TextView
-                android:id="@+id/tvTranscribeStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Transcribing with Groq Whisper AI..."
-                android:textColor="@color/text_white"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-    </FrameLayout>
-
-    <!-- Player Controls (Seekbar + Play/Pause) -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/playerControls"
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:background="@color/bg_surface"
-        android:paddingHorizontal="12dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomToolContainer">
-
-        <ImageButton
-            android:id="@+id/btnPlayPause"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@color/transparent"
-            android:src="@android:drawable/ic_media_play"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <SeekBar
-            android:id="@+id/seekBar"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:progressTint="@color/accent_yellow"
-            android:thumbTint="@color/accent_yellow"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/tvTimeCode"
-            app:layout_constraintStart_toEndOf="@id/btnPlayPause"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tvTimeCode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:text="00:00 / 00:00"
-            android:textColor="@color/text_slate_400"
-            android:textSize="11sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- Bottom InShot-Style Tool Panels Container -->
-    <FrameLayout
-        android:id="@+id/bottomToolContainer"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:background="@color/bg_surface"
-        app:layout_constraintBottom_toTopOf="@id/bottomTabBar">
-
-        <!-- Panel 1: Presets -->
-        <LinearLayout
-            android:id="@+id/panelPresets"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="8dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="6dp"
-                android:text="🔥 Trending Creator Styles"
-                android:textColor="@color/accent_yellow"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvPresets"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-        </LinearLayout>
-
-        <!-- Panel 2: Font & Size -->
-        <LinearLayout
-            android:id="@+id/panelFontSize"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="10dp"
-            android:visibility="gone">
-
-            <!-- Numeric Size Control Bar -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Font Size (Numeric)"
-                    android:textColor="@color/text_white"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSizeMinus"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="0dp"
-                    android:text="-"
-                    android:textColor="@color/text_white"
-                    android:textSize="16sp"
-                    app:cornerRadius="6dp"
-                    app:strokeColor="@color/border_surface" />
-
-                <EditText
-                    android:id="@+id/etFontSizeNumber"
-                    android:layout_width="60dp"
-                    android:layout_height="38dp"
-                    android:layout_marginHorizontal="6dp"
-                    android:background="@color/bg_surface_light"
-                    android:gravity="center"
-                    android:inputType="number"
-                    android:text="65"
-                    android:textColor="@color/accent_yellow"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSizePlus"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:padding="0dp"
-                    android:text="+"
-                    android:textColor="@color/text_white"
-                    android:textSize="16sp"
-                    app:cornerRadius="6dp"
-                    app:strokeColor="@color/border_surface" />
-            </LinearLayout>
-
-            <!-- Quick Size Preset Chips -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/chipSize40"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="32dp"
-                    android:layout_weight="1"
-                    android:text="40"
-                    android:textColor="@color/text_slate_200"
-                    android:textSize="11sp" />
-
-                <Button
-                    android:id="@+id/chipSize65"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="32dp"
-                    android:layout_weight="1"
-                    android:text="65"
-                    android:textColor="@color/text_slate_200"
-                    android:textSize="11sp" />
-
-                <Button
-                    android:id="@+id/chipSize90"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="32dp"
-                    android:layout_weight="1"
-                    android:text="90"
-                    android:textColor="@color/text_slate_200"
-                    android:textSize="11sp" />
-
-                <Button
-                    android:id="@+id/chipSize120"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="32dp"
-                    android:layout_weight="1"
-                    android:text="120"
-                    android:textColor="@color/text_slate_200"
-                    android:textSize="11sp" />
-
-                <Button
-                    android:id="@+id/chipSize160"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="32dp"
-                    android:layout_weight="1"
-                    android:text="160"
-                    android:textColor="@color/text_slate_200"
-                    android:textSize="11sp" />
-
-                <Button
-                    android:id="@+id/chipSize200"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="0dp"
-                    android:layout_height="32dp"
-                    android:layout_weight="1"
-                    android:text="200"
-                    android:textColor="@color/accent_yellow"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Font Family Selector -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Select Font Family"
-                android:textColor="@color/text_slate_400"
-                android:textSize="11sp" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvFonts"
-                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:orientation="horizontal"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                android:text="Edit Captions"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="medium" />
         </LinearLayout>
 
-        <!-- Panel 3: Colors & Effects -->
-        <ScrollView
-            android:id="@+id/panelColors"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="10dp"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Active Word Highlight Color"
-                    android:textColor="@color/text_white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvHighlightColors"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:orientation="horizontal"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Text Color"
-                    android:textColor="@color/text_white"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvTextColors"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:orientation="horizontal"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-            </LinearLayout>
-        </ScrollView>
-
-        <!-- Panel 4: Transcript Editor -->
+        <!-- 2. Templates -->
         <LinearLayout
-            android:id="@+id/panelTranscript"
-            android:layout_width="match_parent"
+            android:id="@+id/tabTemplates"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="8dp"
-            android:visibility="gone">
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_templates"
+                app:tint="@color/text_primary" />
 
             <TextView
-                android:id="@+id/tvTranscriptCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:text="📝 Word-by-Word Transcript (Tap to seek/edit)"
-                android:textColor="@color/text_white"
+                android:layout_marginTop="4dp"
+                android:text="Templates"
+                android:textColor="@color/text_primary"
                 android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvTranscript"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                android:textStyle="medium" />
         </LinearLayout>
 
-    </FrameLayout>
-
-    <!-- Bottom InShot Navigation Tab Bar -->
-    <LinearLayout
-        android:id="@+id/bottomTabBar"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:background="@color/bg_dark"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent">
-
-        <Button
-            android:id="@+id/tabPresets"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+        <!-- 3. Styles -->
+        <LinearLayout
+            android:id="@+id/tabStyles"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="🔥 Styles"
-            android:textColor="@color/accent_yellow"
-            android:textSize="11sp" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/tabFontSize"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="🔤 Font"
-            android:textColor="@color/text_slate_400"
-            android:textSize="11sp" />
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@drawable/ic_styles"
+                app:tint="@color/text_primary" />
 
-        <Button
-            android:id="@+id/tabColors"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="🎨 Color"
-            android:textColor="@color/text_slate_400"
-            android:textSize="11sp" />
-
-        <Button
-            android:id="@+id/tabTranscript"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="📝 Words"
-            android:textColor="@color/text_slate_400"
-            android:textSize="11sp" />
-
-        <Button
-            android:id="@+id/tabTranscribe"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="⚡ Auto AI"
-            android:textColor="@color/primary_500"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Styles"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="medium" />
+        </LinearLayout>
 
     </LinearLayout>
 

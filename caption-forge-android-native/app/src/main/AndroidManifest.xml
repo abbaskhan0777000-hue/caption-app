@@ -32,6 +32,12 @@
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:label="Settings" />
+
+        <activity
+            android:name=".ui.EditCaptionsActivity"
+            android:exported="false"
+            android:label="Edit Captions"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

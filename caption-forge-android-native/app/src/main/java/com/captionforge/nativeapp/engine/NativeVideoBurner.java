@@ -263,33 +263,54 @@ public class NativeVideoBurner {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
-        float textSizePx = (style.fontSize / 720f) * width * 0.95f;
-        Typeface tf = Typeface.create(style.fontFamily, Typeface.BOLD);
+        float scaleFactor = (width / 720f);
+        float textSizePx = (style.fontSize * 1.8f) * scaleFactor;
+
+        int typefaceStyle = Typeface.NORMAL;
+        if (style.isBold && style.isItalic) {
+            typefaceStyle = Typeface.BOLD_ITALIC;
+        } else if (style.isBold) {
+            typefaceStyle = Typeface.BOLD;
+        } else if (style.isItalic) {
+            typefaceStyle = Typeface.ITALIC;
+        }
+
+        Typeface tf = Typeface.create(style.fontFamily, typefaceStyle);
 
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(textSizePx);
         textPaint.setColor(style.textColor);
         textPaint.setTypeface(tf);
+        textPaint.setUnderlineText(style.isUnderlined);
 
         Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setTextAlign(Paint.Align.CENTER);
         strokePaint.setTextSize(textSizePx);
         strokePaint.setColor(style.strokeColor);
-        strokePaint.setStrokeWidth(style.strokeWidth * (width / 720f) * 1.5f);
+        strokePaint.setStrokeWidth(style.hasOutline ? (style.strokeWidth * scaleFactor * 0.8f) : 0);
         strokePaint.setTypeface(tf);
 
         Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        highlightPaint.setTextAlign(Paint.Align.CENTER);
         highlightPaint.setTextSize(textSizePx);
         highlightPaint.setColor(style.highlightColor);
         highlightPaint.setTypeface(tf);
+        highlightPaint.setUnderlineText(style.isUnderlined);
 
         Paint bgBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgBoxPaint.setStyle(Paint.Style.FILL);
 
-        float centerY = (style.positionYPercent / 100f) * height;
+        Paint highlightBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        highlightBgPaint.setStyle(Paint.Style.FILL);
+
+        // Vertical Alignment
+        float centerY;
+        if ("top".equalsIgnoreCase(style.verticalAlign)) {
+            centerY = height * 0.18f;
+        } else if ("center".equalsIgnoreCase(style.verticalAlign)) {
+            centerY = height * 0.50f;
+        } else {
+            centerY = (style.positionYPercent / 100f) * height;
+        }
 
         StringBuilder fullLine = new StringBuilder();
         for (WordCaption w : chunk.words) {
@@ -298,38 +319,61 @@ public class NativeVideoBurner {
         String fullText = fullLine.toString().trim();
         float totalLineWidth = textPaint.measureText(fullText);
 
+        // Text Alignment startX
+        float startX;
+        if ("left".equalsIgnoreCase(style.textAlign)) {
+            startX = 60f * scaleFactor;
+        } else if ("right".equalsIgnoreCase(style.textAlign)) {
+            startX = width - totalLineWidth - (60f * scaleFactor);
+        } else {
+            startX = (width - totalLineWidth) / 2f;
+        }
+
         if (style.backgroundColor != 0 && style.backgroundColor != Color.TRANSPARENT) {
             bgBoxPaint.setColor(style.backgroundColor);
             Rect bounds = new Rect();
             textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
-            float padX = 32f * (width / 720f);
-            float padY = 20f * (width / 720f);
+            float padX = 32f * scaleFactor;
+            float padY = 20f * scaleFactor;
             RectF boxRect = new RectF(
-                    (width - totalLineWidth) / 2f - padX,
+                    startX - padX,
                     centerY + bounds.top - padY,
-                    (width + totalLineWidth) / 2f + padX,
+                    startX + totalLineWidth + padX,
                     centerY + bounds.bottom + padY
             );
-            canvas.drawRoundRect(boxRect, 20f, 20f, bgBoxPaint);
+            canvas.drawRoundRect(boxRect, 20f * scaleFactor, 20f * scaleFactor, bgBoxPaint);
         }
 
-        float startX = (width - totalLineWidth) / 2f;
         float currentX = startX;
-
         for (WordCaption w : chunk.words) {
             String wordText = w.getWord().toUpperCase();
-            float wordWidth = textPaint.measureText(wordText + " ");
+            float wordWidth = textPaint.measureText(wordText);
+            float spaceWidth = textPaint.measureText(" ");
             boolean isActive = (activeWord != null && activeWord == w);
             Paint fillPaint = isActive ? highlightPaint : textPaint;
 
-            float drawX = currentX + (textPaint.measureText(wordText) / 2f);
-
-            if (style.strokeWidth > 0) {
-                canvas.drawText(wordText, drawX, centerY, strokePaint);
+            // Highlight word background box
+            if (isActive && style.highlightBgColor != 0 && style.highlightBgColor != Color.TRANSPARENT) {
+                highlightBgPaint.setColor(style.highlightBgColor);
+                Rect wBounds = new Rect();
+                textPaint.getTextBounds(wordText, 0, wordText.length(), wBounds);
+                float hPadX = 12f * scaleFactor;
+                float hPadY = 8f * scaleFactor;
+                RectF wBox = new RectF(
+                        currentX - hPadX,
+                        centerY + wBounds.top - hPadY,
+                        currentX + wordWidth + hPadX,
+                        centerY + wBounds.bottom + hPadY
+                );
+                canvas.drawRoundRect(wBox, 12f * scaleFactor, 12f * scaleFactor, highlightBgPaint);
             }
-            canvas.drawText(wordText, drawX, centerY, fillPaint);
 
-            currentX += wordWidth;
+            if (style.hasOutline && style.strokeWidth > 0) {
+                canvas.drawText(wordText, currentX, centerY, strokePaint);
+            }
+            canvas.drawText(wordText, currentX, centerY, fillPaint);
+
+            currentX += (wordWidth + spaceWidth);
         }
 
         return bitmap;

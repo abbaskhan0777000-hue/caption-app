@@ -1,22 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Backgrounds & Surfaces (InShot Dark Theme) -->
-    <color name="bg_dark">#0B0D14</color>
-    <color name="bg_surface">#121622</color>
-    <color name="bg_surface_light">#1A2030</color>
-    <color name="bg_surface_card">#222A3E</color>
-    <color name="border_surface">#2E374D</color>
+    <!-- Modern Clean Studio Light Palette -->
+    <color name="bg_app">#FFFFFF</color>
+    <color name="bg_subtle">#F8FAFC</color>
+    <color name="bg_card">#FFFFFF</color>
+    <color name="bg_card_input">#F8FAFC</color>
+    <color name="border_subtle">#E2E8F0</color>
+    <color name="border_focused">#CBD5E1</color>
     
-    <!-- Primary Gradients & Accents -->
-    <color name="primary_500">#6366F1</color>
-    <color name="primary_600">#4F46E5</color>
-    <color name="accent_yellow">#FBBF24</color>
-    <color name="accent_green">#10B981</color>
-    <color name="accent_pink">#EC4899</color>
-    <color name="accent_cyan">#06B6D4</color>
+    <!-- Dark Action Elements & Buttons -->
+    <color name="dark_button">#1E232A</color>
+    <color name="dark_button_pressed">#0F172A</color>
+    <color name="dark_card_bg">#2A2C32</color>
+
+    <!-- Accents & Active Highlights -->
+    <color name="primary_purple">#8B5CF6</color>
+    <color name="accent_yellow">#FACC15</color>
+    <color name="accent_green">#22C55E</color>
+    <color name="accent_blue">#38BDF8</color>
     <color name="accent_red">#EF4444</color>
 
-    <!-- Text Colors -->
+    <!-- Typography -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_muted">#94A3B8</color>
     <color name="text_white">#FFFFFF</color>
     <color name="text_slate_100">#F1F5F9</color>
     <color name="text_slate_200">#E2E8F0</color>
@@ -28,7 +35,9 @@
     <color name="text_slate_800">#1E293B</color>
     <color name="text_slate_900">#0F172A</color>
 
-    <!-- Transparent & Overlay -->
+    <!-- Overlays & Transparency -->
     <color name="black_overlay">#99000000</color>
     <color name="transparent">#00000000</color>
+    <color name="checker_light">#F1F5F9</color>
+    <color name="checker_dark">#E2E8F0</color>
 </resources>

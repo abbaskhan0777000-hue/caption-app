@@ -29,6 +29,7 @@ public class CaptionOverlayView extends View {
     private Paint strokePaint;
     private Paint highlightPaint;
     private Paint bgBoxPaint;
+    private Paint highlightBgPaint;
 
     private float lastTouchY = 0;
     private boolean isDragging = false;
@@ -45,17 +46,13 @@ public class CaptionOverlayView extends View {
 
     private void init() {
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-
         strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setTextAlign(Paint.Align.CENTER);
-
         highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        highlightPaint.setTextAlign(Paint.Align.CENTER);
-
         bgBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bgBoxPaint.setStyle(Paint.Style.FILL);
+        highlightBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        highlightBgPaint.setStyle(Paint.Style.FILL);
     }
 
     public void setWords(List<WordCaption> words) {
@@ -83,7 +80,7 @@ public class CaptionOverlayView extends View {
             case MotionEvent.ACTION_MOVE:
                 if (isDragging && getHeight() > 0) {
                     float newPercent = (event.getY() / getHeight()) * 100f;
-                    style.positionYPercent = Math.max(15f, Math.min(85f, newPercent));
+                    style.positionYPercent = Math.max(12f, Math.min(88f, newPercent));
                     invalidate();
                 }
                 return true;
@@ -104,7 +101,7 @@ public class CaptionOverlayView extends View {
         int height = getHeight();
         if (width == 0 || height == 0) return;
 
-        // Find active chunk
+        // Find active caption chunk
         List<AssGenerator.CaptionChunk> chunks = AssGenerator.chunkWords(words, style.wordsPerChunk);
         AssGenerator.CaptionChunk activeChunk = null;
 
@@ -117,26 +114,47 @@ public class CaptionOverlayView extends View {
 
         if (activeChunk == null) return;
 
-        // Configure Paints
-        float textSizePx = style.fontSize * getResources().getDisplayMetrics().density * 0.5f;
-        Typeface tf = Typeface.create(style.fontFamily, Typeface.BOLD);
+        // Configure Typeface & Styling
+        int typefaceStyle = Typeface.NORMAL;
+        if (style.isBold && style.isItalic) {
+            typefaceStyle = Typeface.BOLD_ITALIC;
+        } else if (style.isBold) {
+            typefaceStyle = Typeface.BOLD;
+        } else if (style.isItalic) {
+            typefaceStyle = Typeface.ITALIC;
+        }
+
+        Typeface tf = Typeface.create(style.fontFamily, typefaceStyle);
+
+        float density = getResources().getDisplayMetrics().density;
+        float textSizePx = style.fontSize * density * 1.0f;
 
         textPaint.setTextSize(textSizePx);
         textPaint.setColor(style.textColor);
         textPaint.setTypeface(tf);
+        textPaint.setUnderlineText(style.isUnderlined);
 
         strokePaint.setTextSize(textSizePx);
         strokePaint.setColor(style.strokeColor);
-        strokePaint.setStrokeWidth(style.strokeWidth * 0.6f);
+        strokePaint.setStrokeWidth(style.hasOutline ? style.strokeWidth * (density * 0.4f) : 0);
         strokePaint.setTypeface(tf);
 
         highlightPaint.setTextSize(textSizePx);
         highlightPaint.setColor(style.highlightColor);
         highlightPaint.setTypeface(tf);
+        highlightPaint.setUnderlineText(style.isUnderlined);
 
-        float centerY = (style.positionYPercent / 100f) * height;
+        // Vertical Placement
+        float centerY;
+        if ("top".equalsIgnoreCase(style.verticalAlign)) {
+            centerY = height * 0.18f;
+        } else if ("center".equalsIgnoreCase(style.verticalAlign)) {
+            centerY = height * 0.50f;
+        } else {
+            centerY = (style.positionYPercent / 100f) * height;
+        }
 
-        // Measure full line width
+        // Measure line width
         StringBuilder fullLine = new StringBuilder();
         for (WordCaption w : activeChunk.words) {
             fullLine.append(w.getWord().toUpperCase()).append(" ");
@@ -144,44 +162,67 @@ public class CaptionOverlayView extends View {
         String fullText = fullLine.toString().trim();
         float totalLineWidth = textPaint.measureText(fullText);
 
-        // Draw Background Box if present
+        // Alignment start X
+        float startX;
+        if ("left".equalsIgnoreCase(style.textAlign)) {
+            startX = 40f * density;
+        } else if ("right".equalsIgnoreCase(style.textAlign)) {
+            startX = width - totalLineWidth - (40f * density);
+        } else {
+            startX = (width - totalLineWidth) / 2f;
+        }
+
+        // Background Box for entire phrase if enabled
         if (style.backgroundColor != 0 && style.backgroundColor != Color.TRANSPARENT) {
             bgBoxPaint.setColor(style.backgroundColor);
             Rect bounds = new Rect();
             textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
-            float padX = 24f;
-            float padY = 16f;
+            float padX = 20f * density;
+            float padY = 12f * density;
             RectF boxRect = new RectF(
-                    (width - totalLineWidth) / 2f - padX,
+                    startX - padX,
                     centerY + bounds.top - padY,
-                    (width + totalLineWidth) / 2f + padX,
+                    startX + totalLineWidth + padX,
                     centerY + bounds.bottom + padY
             );
-            canvas.drawRoundRect(boxRect, 16f, 16f, bgBoxPaint);
+            canvas.drawRoundRect(boxRect, 12f * density, 12f * density, bgBoxPaint);
         }
 
-        // Draw word by word with active highlight
-        float startX = (width - totalLineWidth) / 2f;
+        // Draw each word
         float currentX = startX;
-
         for (WordCaption w : activeChunk.words) {
             String wordText = w.getWord().toUpperCase();
-            float wordWidth = textPaint.measureText(wordText + " ");
+            float wordWidth = textPaint.measureText(wordText);
+            float spaceWidth = textPaint.measureText(" ");
 
             boolean isActive = currentPlaybackTime >= w.getStart() && currentPlaybackTime <= w.getEnd() + 0.1;
             Paint currentFillPaint = isActive ? highlightPaint : textPaint;
 
-            float drawX = currentX + (textPaint.measureText(wordText) / 2f);
-
-            // 1. Draw Stroke
-            if (style.strokeWidth > 0) {
-                canvas.drawText(wordText, drawX, centerY, strokePaint);
+            // Highlight word background box (e.g. Word Background Change preset)
+            if (isActive && style.highlightBgColor != 0 && style.highlightBgColor != Color.TRANSPARENT) {
+                highlightBgPaint.setColor(style.highlightBgColor);
+                Rect wBounds = new Rect();
+                textPaint.getTextBounds(wordText, 0, wordText.length(), wBounds);
+                float hPadX = 8f * density;
+                float hPadY = 6f * density;
+                RectF wBox = new RectF(
+                        currentX - hPadX,
+                        centerY + wBounds.top - hPadY,
+                        currentX + wordWidth + hPadX,
+                        centerY + wBounds.bottom + hPadY
+                );
+                canvas.drawRoundRect(wBox, 8f * density, 8f * density, highlightBgPaint);
             }
 
-            // 2. Draw Fill
-            canvas.drawText(wordText, drawX, centerY, currentFillPaint);
+            // Stroke outline
+            if (style.hasOutline && style.strokeWidth > 0) {
+                canvas.drawText(wordText, currentX, centerY, strokePaint);
+            }
 
-            currentX += wordWidth;
+            // Text Fill
+            canvas.drawText(wordText, currentX, centerY, currentFillPaint);
+
+            currentX += (wordWidth + spaceWidth);
         }
     }
 }
