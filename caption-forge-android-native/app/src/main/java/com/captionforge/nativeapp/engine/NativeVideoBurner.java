@@ -127,14 +127,14 @@ public class NativeVideoBurner {
                 tempOutput = new File(cacheDir, "rendered_" + System.currentTimeMillis() + ".mp4");
 
                 // 3. Assemble FFmpeg Hardware Encoding Command
-                List<String> cmdArgs = new ArrayList<>();
-                cmdArgs.add("-y");
-                cmdArgs.add("-i");
-                cmdArgs.add(tempInput.getAbsolutePath());
+                List<String> baseArgs = new ArrayList<>();
+                baseArgs.add("-y");
+                baseArgs.add("-i");
+                baseArgs.add(tempInput.getAbsolutePath());
 
                 for (OverlayFrame frame : frames) {
-                    cmdArgs.add("-i");
-                    cmdArgs.add(frame.imageFile.getAbsolutePath());
+                    baseArgs.add("-i");
+                    baseArgs.add(frame.imageFile.getAbsolutePath());
                 }
 
                 if (!frames.isEmpty()) {
@@ -155,50 +155,69 @@ public class NativeVideoBurner {
                         lastStream = currentStream;
                     }
 
-                    cmdArgs.add("-filter_complex");
-                    cmdArgs.add(filter.toString());
-                    cmdArgs.add("-map");
-                    cmdArgs.add("[outv]");
+                    baseArgs.add("-filter_complex");
+                    baseArgs.add(filter.toString());
+                    baseArgs.add("-map");
+                    baseArgs.add("[outv]");
                 } else {
-                    cmdArgs.add("-map");
-                    cmdArgs.add("0:v");
+                    baseArgs.add("-map");
+                    baseArgs.add("0:v");
                 }
 
-                cmdArgs.add("-map");
-                cmdArgs.add("0:a?");
-                cmdArgs.add("-c:v");
-                cmdArgs.add("libx264");
-                cmdArgs.add("-preset");
-                cmdArgs.add("ultrafast");
-                cmdArgs.add("-crf");
-                cmdArgs.add("22");
-                cmdArgs.add("-pix_fmt");
-                cmdArgs.add("yuv420p");
-                cmdArgs.add("-c:a");
-                cmdArgs.add("aac");
-                cmdArgs.add("-b:a");
-                cmdArgs.add("192k");
-                cmdArgs.add(tempOutput.getAbsolutePath());
+                baseArgs.add("-map");
+                baseArgs.add("0:a?");
 
-                Log.d(TAG, "Running Native Canvas Overlay FFmpeg: total frames=" + frames.size());
-                String[] argsArray = cmdArgs.toArray(new String[0]);
-                FFmpegSession session = FFmpegKit.executeWithArguments(argsArray);
+                // Candidate Video Encoders: Android Hardware MediaCodec GPU -> OpenH264 -> MPEG4
+                String[][] candidateCodecs = new String[][]{
+                        {"-c:v", "h264_mediacodec", "-b:v", "5M", "-pix_fmt", "yuv420p"},
+                        {"-c:v", "libopenh264", "-b:v", "5M", "-pix_fmt", "yuv420p"},
+                        {"-c:v", "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p"}
+                };
 
-                if (ReturnCode.isSuccess(session.getReturnCode())) {
+                FFmpegSession lastSession = null;
+                boolean success = false;
+
+                for (String[] codecArgs : candidateCodecs) {
+                    if (tempOutput.exists()) {
+                        tempOutput.delete();
+                    }
+                    List<String> fullCmd = new ArrayList<>(baseArgs);
+                    for (String arg : codecArgs) {
+                        fullCmd.add(arg);
+                    }
+                    fullCmd.add("-c:a");
+                    fullCmd.add("aac");
+                    fullCmd.add("-b:a");
+                    fullCmd.add("192k");
+                    fullCmd.add(tempOutput.getAbsolutePath());
+
+                    Log.d(TAG, "Trying encoder: " + codecArgs[1]);
+                    lastSession = FFmpegKit.executeWithArguments(fullCmd.toArray(new String[0]));
+
+                    if (ReturnCode.isSuccess(lastSession.getReturnCode())) {
+                        success = true;
+                        Log.i(TAG, "Render Succeeded with encoder: " + codecArgs[1]);
+                        break;
+                    } else {
+                        Log.w(TAG, "Encoder " + codecArgs[1] + " failed, trying fallback encoder...");
+                    }
+                }
+
+                if (success) {
                     Log.i(TAG, "Render Succeeded. Inserting to MediaStore Gallery...");
                     String savedName = saveToGallery(context, tempOutput);
                     cleanup(tempInput, tempOutput, frames, overlaysDir);
                     callback.onSuccess(savedName);
                 } else {
-                    String fullLog = session.getAllLogsAsString();
+                    String fullLog = lastSession != null ? lastSession.getAllLogsAsString() : "Unknown error";
                     if (fullLog == null || fullLog.trim().isEmpty()) {
-                        fullLog = session.getOutput();
+                        fullLog = lastSession != null ? lastSession.getOutput() : "Unknown error";
                     }
                     String errorDetail = (fullLog != null && fullLog.length() > 600)
                             ? fullLog.substring(fullLog.length() - 600)
                             : (fullLog != null ? fullLog : "Unknown error");
 
-                    Log.e(TAG, "FFmpeg failed: " + fullLog);
+                    Log.e(TAG, "All video encoders failed: " + fullLog);
                     cleanup(tempInput, tempOutput, frames, overlaysDir);
                     callback.onError("Encoding error: " + errorDetail);
                 }
