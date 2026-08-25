@@ -245,10 +245,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:fontFamily="sans-serif-medium"
                 android:text="Edit Captions"
                 android:textColor="@color/text_primary"
                 android:textSize="12sp"
-                android:textStyle="medium" />
+                android:textStyle="bold" />
         </LinearLayout>
 
         <!-- 2. Templates -->
@@ -271,10 +272,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:fontFamily="sans-serif-medium"
                 android:text="Templates"
                 android:textColor="@color/text_primary"
                 android:textSize="12sp"
-                android:textStyle="medium" />
+                android:textStyle="bold" />
         </LinearLayout>
 
         <!-- 3. Styles -->
@@ -297,10 +299,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:fontFamily="sans-serif-medium"
                 android:text="Styles"
                 android:textColor="@color/text_primary"
                 android:textSize="12sp"
-                android:textStyle="medium" />
+                android:textStyle="bold" />
         </LinearLayout>
 
     </LinearLayout>
