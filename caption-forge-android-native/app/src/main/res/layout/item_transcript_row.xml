@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="4dp"
+    android:background="@color/bg_surface_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/tvRowTime"
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:text="00:02.4"
+        android:textColor="@color/accent_cyan"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/etRowWord"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@color/transparent"
+        android:paddingHorizontal="4dp"
+        android:text="Captions"
+        android:textColor="@color/text_white"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/btnRowSeek"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:background="@color/transparent"
+        android:src="@android:drawable/ic_media_play" />
+
+</LinearLayout>
