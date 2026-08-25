@@ -73,17 +73,42 @@ public class NativeVideoBurner {
                 // 3. Prepare Internal Destination
                 tempOutput = new File(cacheDir, "rendered_" + System.currentTimeMillis() + ".mp4");
 
-                // 4. Construct FFmpeg command
-                String ffmpegCommand = String.format(
-                        "-y -i \"%s\" -vf \"ass=%s\" -c:v libx264 -preset ultrafast -crf 21 -c:a aac -b:a 192k \"%s\"",
-                        tempInput.getAbsolutePath(),
-                        subFile.getAbsolutePath(),
+                // 4. Construct FFmpeg command with proper escaping and yuv420p format
+                String escapedSubPath = subFile.getAbsolutePath().replace("\\", "/").replace(":", "\\:").replace("'", "\\'");
+                
+                String[] args = new String[]{
+                        "-y",
+                        "-i", tempInput.getAbsolutePath(),
+                        "-vf", "ass=" + escapedSubPath,
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-crf", "22",
+                        "-pix_fmt", "yuv420p",
+                        "-c:a", "aac",
+                        "-b:a", "192k",
                         tempOutput.getAbsolutePath()
-                );
+                };
 
-                Log.d(TAG, "Running Native FFmpeg: " + ffmpegCommand);
+                Log.d(TAG, "Running Native FFmpeg with ass filter");
+                FFmpegSession session = FFmpegKit.executeWithArguments(args);
 
-                FFmpegSession session = FFmpegKit.execute(ffmpegCommand);
+                // Fallback to subtitles filter if ass fails
+                if (!ReturnCode.isSuccess(session.getReturnCode())) {
+                    Log.w(TAG, "ass filter failed, retrying with subtitles filter...");
+                    String[] fallbackArgs = new String[]{
+                            "-y",
+                            "-i", tempInput.getAbsolutePath(),
+                            "-vf", "subtitles=" + escapedSubPath,
+                            "-c:v", "libx264",
+                            "-preset", "ultrafast",
+                            "-crf", "22",
+                            "-pix_fmt", "yuv420p",
+                            "-c:a", "aac",
+                            "-b:a", "192k",
+                            tempOutput.getAbsolutePath()
+                    };
+                    session = FFmpegKit.executeWithArguments(fallbackArgs);
+                }
 
                 if (ReturnCode.isSuccess(session.getReturnCode())) {
                     Log.i(TAG, "Render Succeeded. Inserting to MediaStore Gallery...");

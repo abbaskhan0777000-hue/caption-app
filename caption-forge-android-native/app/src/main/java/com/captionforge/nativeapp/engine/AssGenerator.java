@@ -14,7 +14,7 @@ public class AssGenerator {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
-        return String.format(Locale.US, "&H%02X%02X%02X%02X&", a, b, g, r);
+        return String.format(Locale.US, "&H%02X%02X%02X%02X", a, b, g, r);
     }
 
     public static String formatAssTime(double seconds) {
