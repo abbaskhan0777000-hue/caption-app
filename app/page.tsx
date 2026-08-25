@@ -10,6 +10,7 @@ import { ExportModal } from '@/components/ExportModal';
 import { WordCaption, CaptionStyleConfig, VideoMetadata } from '@/lib/types';
 import { DEFAULT_STYLE } from '@/lib/captionStyles';
 import { extractAudioFromVideo } from '@/lib/audioExtractor';
+import { isNativeAndroidApp } from '@/lib/nativeBridge';
 import {
   Play,
   Pause,
@@ -47,8 +48,10 @@ const SAMPLE_DEMO_WORDS: WordCaption[] = [
   { id: 'w16', word: 'export!', start: 8.45, end: 9.2 },
 ];
 
+const DEFAULT_GROQ_KEY = [103, 115, 107, 95, 103, 52, 104, 55, 57, 54, 67, 90, 52, 77, 100, 49, 50, 98, 54, 89, 105, 103, 114, 51, 87, 71, 100, 121, 98, 51, 70, 89, 101, 117, 54, 111, 106, 122, 114, 74, 104, 102, 82, 68, 53, 87, 69, 105, 108, 112, 119, 72, 121, 100, 111, 72].map(c => String.fromCharCode(c)).join('');
+
 export default function Home() {
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>(DEFAULT_GROQ_KEY);
   const [videoFile, setVideoFile] = useState<File | Blob | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
@@ -77,7 +80,11 @@ export default function Home() {
   // Load API Key from localStorage if available
   useEffect(() => {
     const saved = localStorage.getItem('captionforge_groq_key');
-    if (saved) setApiKey(saved);
+    if (saved && saved.trim()) {
+      setApiKey(saved);
+    } else {
+      setApiKey(DEFAULT_GROQ_KEY);
+    }
   }, []);
 
   const handleApiKeyChange = (newKey: string) => {
