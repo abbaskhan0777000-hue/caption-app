@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 captionOverlay.updatePlaybackTime(pos / 1000.0);
             }
-            progressHandler.postDelayed(this, 30);
+            progressHandler.postDelayed(this, 16);
         }
     };
 
@@ -115,6 +115,9 @@ public class MainActivity extends AppCompatActivity {
         setupBottomTools();
     }
 
+    private ImageView btnCenterPlay;
+    private ImageView btnBottomPlayPause;
+
     private void initViews() {
         playerView = findViewById(R.id.playerView);
         captionOverlay = findViewById(R.id.captionOverlay);
@@ -123,6 +126,9 @@ public class MainActivity extends AppCompatActivity {
         layoutEmptyPrompt = findViewById(R.id.layoutEmptyPrompt);
         layoutTranscribeLoading = findViewById(R.id.layoutTranscribeLoading);
         tvTranscribeStatus = findViewById(R.id.tvTranscribeStatus);
+
+        btnCenterPlay = findViewById(R.id.btnCenterPlay);
+        btnBottomPlayPause = findViewById(R.id.btnBottomPlayPause);
 
         rvSegmentChips = findViewById(R.id.rvSegmentChips);
         chipAdapter = new ChipSegmentAdapter(chunk -> {
@@ -138,26 +144,57 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnExport).setOnClickListener(v -> showExportDialog());
 
         // Empty prompt button
-        findViewById(R.id.btnSelectVideoPrompt).setOnClickListener(v -> videoPickerLauncher.launch("video/*"));
+        findViewById(R.id.btnSelectVideoEmpty).setOnClickListener(v -> videoPickerLauncher.launch("video/*"));
 
-        // Video container click toggles play/pause
-        playerView.setOnClickListener(v -> {
-            if (player != null) {
-                if (player.isPlaying()) {
-                    player.pause();
-                } else {
-                    player.play();
-                }
+        // Play/Pause button click listeners
+        btnCenterPlay.setOnClickListener(v -> togglePlayPause());
+        btnBottomPlayPause.setOnClickListener(v -> togglePlayPause());
+        captionOverlay.setOnOverlayTapListener(this::togglePlayPause);
+    }
+
+    private void togglePlayPause() {
+        if (player != null) {
+            if (player.isPlaying()) {
+                player.pause();
+                btnCenterPlay.setVisibility(View.VISIBLE);
+                btnBottomPlayPause.setImageResource(R.drawable.ic_play_white);
+            } else {
+                player.play();
+                btnCenterPlay.setVisibility(View.GONE);
+                btnBottomPlayPause.setImageResource(R.drawable.ic_pause_white);
             }
-        });
+        }
     }
 
     private void setupPlayer() {
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
-        player.setRepeatMode(Player.REPEAT_MODE_ALL);
+        playerView.setUseController(false);
 
-        captionOverlay.setStyle(currentStyle);
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int playbackState) {
+                if (playbackState == Player.STATE_ENDED) {
+                    player.seekTo(0);
+                    player.pause();
+                    btnCenterPlay.setVisibility(View.VISIBLE);
+                    btnBottomPlayPause.setImageResource(R.drawable.ic_play_white);
+                }
+            }
+
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                if (isPlaying) {
+                    btnCenterPlay.setVisibility(View.GONE);
+                    btnBottomPlayPause.setImageResource(R.drawable.ic_pause_white);
+                } else {
+                    btnCenterPlay.setVisibility(View.VISIBLE);
+                    btnBottomPlayPause.setImageResource(R.drawable.ic_play_white);
+                }
+            }
+        });
+
+        playerView.setOnClickListener(v -> togglePlayPause());
         progressHandler.post(updateProgressRunnable);
     }
 
@@ -165,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
         // 1. Edit Captions
         findViewById(R.id.tabEditCaptions).setOnClickListener(v -> {
             if (words == null || words.isEmpty()) {
-                Toast.makeText(this, "Please select a video with captions first", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No captions to edit. Please import a video.", Toast.LENGTH_SHORT).show();
                 return;
             }
             EditCaptionsActivity.inputWords = new ArrayList<>(words);
@@ -176,33 +213,23 @@ public class MainActivity extends AppCompatActivity {
 
         // 2. Templates
         findViewById(R.id.tabTemplates).setOnClickListener(v -> {
-            TemplatesBottomSheet sheet = TemplatesBottomSheet.newInstance(currentStyle, new TemplatesBottomSheet.OnTemplateApplyListener() {
-                @Override
-                public void onApply(CaptionStyle style) {
-                    currentStyle = style;
-                    captionOverlay.setStyle(currentStyle);
-                    updateSegmentChips();
-                }
-
-                @Override
-                public void onOpenStyles() {
-                    openStylesDialog();
-                }
+            TemplatesBottomSheet sheet = TemplatesBottomSheet.newInstance(selectedStyle -> {
+                this.currentStyle = selectedStyle;
+                captionOverlay.setStyle(currentStyle);
+                updateSegmentChips();
             });
-            sheet.show(getSupportFragmentManager(), "TemplatesBottomSheet");
+            sheet.show(getSupportFragmentManager(), "TemplatesSheet");
         });
 
         // 3. Styles
-        findViewById(R.id.tabStyles).setOnClickListener(v -> openStylesDialog());
-    }
-
-    private void openStylesDialog() {
-        StylesBottomSheet sheet = StylesBottomSheet.newInstance(currentStyle, style -> {
-            this.currentStyle = style;
-            captionOverlay.setStyle(currentStyle);
-            updateSegmentChips();
+        findViewById(R.id.tabStyles).setOnClickListener(v -> {
+            StylesBottomSheet sheet = StylesBottomSheet.newInstance(currentStyle, updatedStyle -> {
+                this.currentStyle = updatedStyle;
+                captionOverlay.setStyle(currentStyle);
+                updateSegmentChips();
+            });
+            sheet.show(getSupportFragmentManager(), "StylesSheet");
         });
-        sheet.show(getSupportFragmentManager(), "StylesBottomSheet");
     }
 
     private void updateSegmentChips() {
@@ -276,6 +303,8 @@ public class MainActivity extends AppCompatActivity {
 
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_export, null);
         RadioGroup rgResolution = dialogView.findViewById(R.id.rgResolution);
+        View layoutProgress = dialogView.findViewById(R.id.layoutExportProgressContainer);
+        TextView tvExportPercent = dialogView.findViewById(R.id.tvExportPercent);
         ProgressBar pbExport = dialogView.findViewById(R.id.pbExport);
         TextView tvExportStatus = dialogView.findViewById(R.id.tvExportStatus);
         MaterialButton btnStartRender = dialogView.findViewById(R.id.btnStartRender);
@@ -293,9 +322,11 @@ public class MainActivity extends AppCompatActivity {
             String resolution = (rgResolution.getCheckedRadioButtonId() == R.id.rb1080p) ? "1080p" : "720p";
 
             btnStartRender.setEnabled(false);
-            pbExport.setVisibility(View.VISIBLE);
-            tvExportStatus.setVisibility(View.VISIBLE);
-            tvExportStatus.setText("Burning hardware GPU overlays...");
+            btnStartRender.setVisibility(View.GONE);
+            layoutProgress.setVisibility(View.VISIBLE);
+            tvExportPercent.setText("0%");
+            pbExport.setProgress(0);
+            tvExportStatus.setText("Generating crisp hardware overlays...");
 
             NativeVideoBurner.burnCaptionsToGallery(
                     MainActivity.this,
@@ -306,14 +337,24 @@ public class MainActivity extends AppCompatActivity {
                     new NativeVideoBurner.BurnCallback() {
                         @Override
                         public void onProgress(int percentage) {
-                            runOnUiThread(() -> pbExport.setProgress(percentage));
+                            runOnUiThread(() -> {
+                                pbExport.setProgress(percentage);
+                                tvExportPercent.setText(percentage + "%");
+                                if (percentage < 20) {
+                                    tvExportStatus.setText("Generating hardware overlay frames...");
+                                } else if (percentage < 95) {
+                                    tvExportStatus.setText("Encoding GPU video stream (" + percentage + "%)...");
+                                } else {
+                                    tvExportStatus.setText("Saving to Gallery...");
+                                }
+                            });
                         }
 
                         @Override
                         public void onSuccess(String galleryLocation) {
                             runOnUiThread(() -> {
                                 dialog.dismiss();
-                                Toast.makeText(MainActivity.this, "Saved to Gallery! " + galleryLocation, Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, "🎉 Saved to Gallery! " + galleryLocation, Toast.LENGTH_LONG).show();
                             });
                         }
 
@@ -321,9 +362,9 @@ public class MainActivity extends AppCompatActivity {
                         public void onError(String error) {
                             runOnUiThread(() -> {
                                 btnStartRender.setEnabled(true);
-                                pbExport.setVisibility(View.GONE);
-                                tvExportStatus.setText("Export error: " + error);
-                                Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
+                                btnStartRender.setVisibility(View.VISIBLE);
+                                layoutProgress.setVisibility(View.GONE);
+                                Toast.makeText(MainActivity.this, "Export error: " + error, Toast.LENGTH_LONG).show();
                             });
                         }
                     }

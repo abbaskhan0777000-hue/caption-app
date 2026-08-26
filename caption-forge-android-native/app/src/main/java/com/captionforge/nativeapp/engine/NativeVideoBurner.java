@@ -20,6 +20,8 @@ import android.util.Log;
 import com.arthenica.ffmpegkit.FFmpegKit;
 import com.arthenica.ffmpegkit.FFmpegSession;
 import com.arthenica.ffmpegkit.ReturnCode;
+import com.arthenica.ffmpegkit.Statistics;
+import com.arthenica.ffmpegkit.StatisticsCallback;
 import com.captionforge.nativeapp.model.CaptionStyle;
 import com.captionforge.nativeapp.model.WordCaption;
 
@@ -31,6 +33,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NativeVideoBurner {
     private static final String TAG = "NativeVideoBurner";
@@ -84,9 +88,10 @@ public class NativeVideoBurner {
                     out.flush();
                 }
 
-                // 2. Extract Exact Video Width & Height to match Overlay 1:1
+                // 2. Extract Exact Video Width, Height, and Duration for 100% sync & progress
                 int outWidth = 720;
                 int outHeight = 1280;
+                long totalVideoDurationMs = 10000;
 
                 try {
                     MediaMetadataRetriever retriever = new MediaMetadataRetriever();
@@ -94,7 +99,12 @@ public class NativeVideoBurner {
                     String widthStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
                     String heightStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
                     String rotationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+                    String durStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
                     retriever.release();
+
+                    if (durStr != null) {
+                        totalVideoDurationMs = Long.parseLong(durStr);
+                    }
 
                     if (widthStr != null && heightStr != null) {
                         int rawW = Integer.parseInt(widthStr);
@@ -113,14 +123,17 @@ public class NativeVideoBurner {
                     outHeight = "1080p".equalsIgnoreCase(resolution) ? 1920 : 1280;
                 }
 
-                Log.d(TAG, "Target video dimensions: " + outWidth + "x" + outHeight);
+                Log.d(TAG, "Target video: " + outWidth + "x" + outHeight + " Duration: " + totalVideoDurationMs + "ms");
+                callback.onProgress(5);
 
-                // 2. Generate Hardware Bitmap Overlays for every caption event
+                // 3. Generate Hardware Bitmap Overlays with EXACT Millisecond Timestamps (No artificial padding!)
                 if (words != null && !words.isEmpty()) {
                     List<AssGenerator.CaptionChunk> chunks = AssGenerator.chunkWords(words, style.wordsPerChunk);
+                    int totalChunks = chunks.size();
                     int frameIndex = 0;
 
-                    for (AssGenerator.CaptionChunk chunk : chunks) {
+                    for (int cIdx = 0; cIdx < totalChunks; cIdx++) {
+                        AssGenerator.CaptionChunk chunk = chunks.get(cIdx);
                         if (chunk.words.isEmpty()) continue;
 
                         if ("karaoke".equalsIgnoreCase(style.animationPreset) || "pop".equalsIgnoreCase(style.animationPreset)) {
@@ -133,7 +146,7 @@ public class NativeVideoBurner {
                                 bmp.recycle();
 
                                 double start = Math.max(0, activeWord.getStart());
-                                double end = activeWord.getEnd() + 0.1;
+                                double end = Math.max(start + 0.05, activeWord.getEnd());
                                 frames.add(new OverlayFrame(imgFile, start, end));
                                 frameIndex++;
                             }
@@ -146,16 +159,19 @@ public class NativeVideoBurner {
                             bmp.recycle();
 
                             double start = Math.max(0, chunk.start);
-                            double end = chunk.end + 0.25;
+                            double end = Math.max(start + 0.1, chunk.end);
                             frames.add(new OverlayFrame(imgFile, start, end));
                             frameIndex++;
                         }
+
+                        int overlayProgress = 5 + (int) (((cIdx + 1) / (double) totalChunks) * 15);
+                        callback.onProgress(overlayProgress);
                     }
                 }
 
                 tempOutput = new File(cacheDir, "rendered_" + System.currentTimeMillis() + ".mp4");
 
-                // 3. Assemble FFmpeg Hardware Encoding Command
+                // 4. Assemble FFmpeg Hardware Encoding Command
                 List<String> baseArgs = new ArrayList<>();
                 baseArgs.add("-y");
                 baseArgs.add("-i");
@@ -175,7 +191,7 @@ public class NativeVideoBurner {
                         String currentStream = (i == frames.size() - 1) ? "outv" : ("v" + (i + 1));
                         int inputIdx = i + 1;
                         filter.append(String.format(Locale.US,
-                                "[%s][%d:v]overlay=0:0:enable='between(t,%.2f,%.2f)'[%s]",
+                                "[%s][%d:v]overlay=0:0:enable='between(t,%.3f,%.3f)'[%s]",
                                 lastStream, inputIdx, frame.startTime, frame.endTime, currentStream));
 
                         if (i < frames.size() - 1) {
@@ -203,8 +219,9 @@ public class NativeVideoBurner {
                         {"-c:v", "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p"}
                 };
 
-                FFmpegSession lastSession = null;
                 boolean success = false;
+                String finalError = "";
+                final long finalDurMs = Math.max(1000, totalVideoDurationMs);
 
                 for (String[] codecArgs : candidateCodecs) {
                     if (tempOutput.exists()) {
@@ -220,51 +237,80 @@ public class NativeVideoBurner {
                     fullCmd.add("192k");
                     fullCmd.add(tempOutput.getAbsolutePath());
 
-                    Log.d(TAG, "Trying encoder: " + codecArgs[1]);
-                    lastSession = FFmpegKit.executeWithArguments(fullCmd.toArray(new String[0]));
+                    Log.d(TAG, "Trying encoder with real-time statistics: " + codecArgs[1]);
 
-                    if (ReturnCode.isSuccess(lastSession.getReturnCode())) {
+                    CountDownLatch latch = new CountDownLatch(1);
+                    AtomicBoolean sessionSuccess = new AtomicBoolean(false);
+
+                    FFmpegSession session = FFmpegKit.executeWithArgumentsAsync(
+                            fullCmd.toArray(new String[0]),
+                            completedSession -> {
+                                if (ReturnCode.isSuccess(completedSession.getReturnCode())) {
+                                    sessionSuccess.set(true);
+                                }
+                                latch.countDown();
+                            },
+                            log -> {},
+                            statistics -> {
+                                if (statistics != null) {
+                                    double timeSec = statistics.getTime() / 1000.0;
+                                    double totalSec = finalDurMs / 1000.0;
+                                    int renderPct = (int) ((timeSec / totalSec) * 75.0);
+                                    int totalPct = Math.min(96, 20 + renderPct);
+                                    callback.onProgress(totalPct);
+                                }
+                            }
+                    );
+
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Interrupted during encode", e);
+                    }
+
+                    if (sessionSuccess.get()) {
                         success = true;
                         Log.i(TAG, "Render Succeeded with encoder: " + codecArgs[1]);
                         break;
                     } else {
-                        Log.w(TAG, "Encoder " + codecArgs[1] + " failed, trying fallback encoder...");
+                        finalError = session != null ? session.getAllLogsAsString() : "Encoder failed";
+                        Log.w(TAG, "Encoder " + codecArgs[1] + " failed, trying next...");
                     }
                 }
 
                 if (success) {
+                    callback.onProgress(98);
                     Log.i(TAG, "Render Succeeded. Inserting to MediaStore Gallery...");
                     String savedName = saveToGallery(context, tempOutput);
+                    callback.onProgress(100);
                     cleanup(tempInput, tempOutput, frames, overlaysDir);
                     callback.onSuccess(savedName);
                 } else {
-                    String fullLog = lastSession != null ? lastSession.getAllLogsAsString() : "Unknown error";
-                    if (fullLog == null || fullLog.trim().isEmpty()) {
-                        fullLog = lastSession != null ? lastSession.getOutput() : "Unknown error";
-                    }
-                    String errorDetail = (fullLog != null && fullLog.length() > 600)
-                            ? fullLog.substring(fullLog.length() - 600)
-                            : (fullLog != null ? fullLog : "Unknown error");
-
-                    Log.e(TAG, "All video encoders failed: " + fullLog);
+                    Log.e(TAG, "All video encoders failed: " + finalError);
                     cleanup(tempInput, tempOutput, frames, overlaysDir);
-                    callback.onError("Encoding error: " + errorDetail);
+                    callback.onError("Video export failed: " + finalError);
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "Burn error", e);
+                Log.e(TAG, "Fatal Burn Exception", e);
                 cleanup(tempInput, tempOutput, frames, overlaysDir);
-                callback.onError("Render exception: " + e.getMessage());
+                callback.onError("Hardware burn error: " + e.getMessage());
             }
         }).start();
     }
 
-    private static Bitmap renderCaptionBitmap(int width, int height, AssGenerator.CaptionChunk chunk, WordCaption activeWord, CaptionStyle style) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    private static Bitmap renderCaptionBitmap(
+            int videoWidth,
+            int videoHeight,
+            AssGenerator.CaptionChunk chunk,
+            WordCaption activeWord,
+            CaptionStyle style
+    ) {
+        Bitmap bitmap = Bitmap.createBitmap(videoWidth, videoHeight, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
-        float scaleFactor = (width / 720f);
-        float textSizePx = (style.fontSize * 1.8f) * scaleFactor;
+        float scaleFactor = (float) videoWidth / 720f;
+        float textSizePx = style.fontSize * scaleFactor * 2.1f;
 
         int typefaceStyle = Typeface.NORMAL;
         if (style.isBold && style.isItalic) {
@@ -287,7 +333,7 @@ public class NativeVideoBurner {
         strokePaint.setStyle(Paint.Style.STROKE);
         strokePaint.setTextSize(textSizePx);
         strokePaint.setColor(style.strokeColor);
-        strokePaint.setStrokeWidth(style.hasOutline ? (style.strokeWidth * scaleFactor * 0.8f) : 0);
+        strokePaint.setStrokeWidth(style.hasOutline ? style.strokeWidth * scaleFactor * 0.9f : 0);
         strokePaint.setTypeface(tf);
 
         Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -302,53 +348,56 @@ public class NativeVideoBurner {
         Paint highlightBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         highlightBgPaint.setStyle(Paint.Style.FILL);
 
-        // Vertical Alignment
+        // Vertical Placement
         float centerY;
         if ("top".equalsIgnoreCase(style.verticalAlign)) {
-            centerY = height * 0.18f;
+            centerY = videoHeight * 0.18f;
         } else if ("center".equalsIgnoreCase(style.verticalAlign)) {
-            centerY = height * 0.50f;
+            centerY = videoHeight * 0.50f;
         } else {
-            centerY = (style.positionYPercent / 100f) * height;
+            centerY = (style.positionYPercent / 100f) * videoHeight;
         }
 
-        StringBuilder fullLine = new StringBuilder();
+        // Measure phrase
+        StringBuilder sb = new StringBuilder();
         for (WordCaption w : chunk.words) {
-            fullLine.append(w.getWord().toUpperCase()).append(" ");
+            sb.append(w.getWord().toUpperCase()).append(" ");
         }
-        String fullText = fullLine.toString().trim();
+        String fullText = sb.toString().trim();
         float totalLineWidth = textPaint.measureText(fullText);
 
-        // Text Alignment startX
         float startX;
         if ("left".equalsIgnoreCase(style.textAlign)) {
             startX = 60f * scaleFactor;
         } else if ("right".equalsIgnoreCase(style.textAlign)) {
-            startX = width - totalLineWidth - (60f * scaleFactor);
+            startX = videoWidth - totalLineWidth - (60f * scaleFactor);
         } else {
-            startX = (width - totalLineWidth) / 2f;
+            startX = (videoWidth - totalLineWidth) / 2f;
         }
 
+        // Phrase Background
         if (style.backgroundColor != 0 && style.backgroundColor != Color.TRANSPARENT) {
             bgBoxPaint.setColor(style.backgroundColor);
             Rect bounds = new Rect();
             textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
-            float padX = 32f * scaleFactor;
-            float padY = 20f * scaleFactor;
-            RectF boxRect = new RectF(
+            float padX = 24f * scaleFactor;
+            float padY = 16f * scaleFactor;
+            RectF box = new RectF(
                     startX - padX,
                     centerY + bounds.top - padY,
                     startX + totalLineWidth + padX,
                     centerY + bounds.bottom + padY
             );
-            canvas.drawRoundRect(boxRect, 20f * scaleFactor, 20f * scaleFactor, bgBoxPaint);
+            canvas.drawRoundRect(box, 16f * scaleFactor, 16f * scaleFactor, bgBoxPaint);
         }
 
+        // Draw words
         float currentX = startX;
         for (WordCaption w : chunk.words) {
             String wordText = w.getWord().toUpperCase();
             float wordWidth = textPaint.measureText(wordText);
             float spaceWidth = textPaint.measureText(" ");
+
             boolean isActive = (activeWord != null && activeWord == w);
             Paint fillPaint = isActive ? highlightPaint : textPaint;
 
@@ -365,13 +414,22 @@ public class NativeVideoBurner {
                         currentX + wordWidth + hPadX,
                         centerY + wBounds.bottom + hPadY
                 );
-                canvas.drawRoundRect(wBox, 12f * scaleFactor, 12f * scaleFactor, highlightBgPaint);
+                canvas.drawRoundRect(wBox, 10f * scaleFactor, 10f * scaleFactor, highlightBgPaint);
             }
 
-            if (style.hasOutline && style.strokeWidth > 0) {
+            // Outline
+            if (style.hasOutline && strokePaint.getStrokeWidth() > 0) {
                 canvas.drawText(wordText, currentX, centerY, strokePaint);
             }
+
+            // Shadow
+            if (style.hasShadow) {
+                fillPaint.setShadowLayer(6f * scaleFactor, 3f * scaleFactor, 3f * scaleFactor, style.shadowColor);
+            }
+
+            // Text
             canvas.drawText(wordText, currentX, centerY, fillPaint);
+            fillPaint.clearShadowLayer();
 
             currentX += (wordWidth + spaceWidth);
         }
@@ -379,51 +437,29 @@ public class NativeVideoBurner {
         return bitmap;
     }
 
-    private static void cleanup(File tempInput, File tempOutput, List<OverlayFrame> frames, File overlaysDir) {
-        if (tempInput != null && tempInput.exists()) tempInput.delete();
-        if (tempOutput != null && tempOutput.exists()) tempOutput.delete();
-        if (frames != null) {
-            for (OverlayFrame f : frames) {
-                if (f.imageFile != null && f.imageFile.exists()) {
-                    f.imageFile.delete();
-                }
-            }
-        }
-        if (overlaysDir != null && overlaysDir.exists()) {
-            overlaysDir.delete();
-        }
-    }
-
-    private static String saveToGallery(Context context, File sourceFile) throws Exception {
-        String displayName = "CaptionForge_" + System.currentTimeMillis() + ".mp4";
+    private static String saveToGallery(Context context, File videoFile) throws Exception {
+        String fileName = "CaptionForge_" + System.currentTimeMillis() + ".mp4";
         ContentResolver resolver = context.getContentResolver();
-
         ContentValues values = new ContentValues();
-        values.put(MediaStore.Video.Media.DISPLAY_NAME, displayName);
+        values.put(MediaStore.Video.Media.DISPLAY_NAME, fileName);
         values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
-        values.put(MediaStore.Video.Media.TITLE, displayName);
+        values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/CaptionForge");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/CaptionForge");
             values.put(MediaStore.Video.Media.IS_PENDING, 1);
         }
 
-        Uri collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-        Uri itemUri = resolver.insert(collection, values);
-
-        if (itemUri == null) {
-            throw new Exception("Failed to create MediaStore entry.");
+        Uri uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
+        if (uri == null) {
+            throw new Exception("Failed to create MediaStore entry");
         }
 
-        try (InputStream in = new FileInputStream(sourceFile);
-             OutputStream out = resolver.openOutputStream(itemUri)) {
-            if (out == null) {
-                throw new Exception("Failed to open output stream for Gallery.");
-            }
-            byte[] buf = new byte[1024 * 64];
+        try (InputStream in = new FileInputStream(videoFile);
+             OutputStream out = resolver.openOutputStream(uri)) {
+            byte[] buffer = new byte[1024 * 64];
             int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
+            while ((len = in.read(buffer)) > 0) {
+                out.write(buffer, 0, len);
             }
             out.flush();
         }
@@ -431,9 +467,22 @@ public class NativeVideoBurner {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             values.clear();
             values.put(MediaStore.Video.Media.IS_PENDING, 0);
-            resolver.update(itemUri, values, null, null);
+            resolver.update(uri, values, null, null);
         }
 
-        return "Movies/CaptionForge/" + displayName;
+        return "Movies/CaptionForge/" + fileName;
+    }
+
+    private static void cleanup(File input, File output, List<OverlayFrame> frames, File overlaysDir) {
+        if (input != null && input.exists()) input.delete();
+        if (output != null && output.exists()) output.delete();
+        if (frames != null) {
+            for (OverlayFrame f : frames) {
+                if (f.imageFile != null && f.imageFile.exists()) f.imageFile.delete();
+            }
+        }
+        if (overlaysDir != null && overlaysDir.exists()) {
+            overlaysDir.delete();
+        }
     }
 }

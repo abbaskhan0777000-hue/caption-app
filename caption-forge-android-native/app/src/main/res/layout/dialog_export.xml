@@ -3,16 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/bg_surface"
+    android:background="@drawable/bg_dark_pill"
+    android:backgroundTint="#1E232A"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="24dp">
 
+    <!-- Title Header -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="⚡ Hardware Video Export"
-        android:textColor="@color/text_white"
-        android:textSize="16sp"
+        android:text="⚡ Export Video"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
@@ -20,24 +22,24 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="Renders with native ARM64 GPU acceleration and saves directly to your device Gallery."
-        android:textColor="@color/text_slate_400"
-        android:textSize="12sp" />
+        android:textColor="#94A3B8"
+        android:textSize="13sp" />
 
     <!-- Resolution Selector -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Resolution"
-        android:textColor="@color/text_slate_200"
-        android:textSize="13sp"
+        android:layout_marginTop="18dp"
+        android:text="Select Resolution"
+        android:textColor="#F1F5F9"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <RadioGroup
         android:id="@+id/rgResolution"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
         <RadioButton
@@ -47,8 +49,8 @@
             android:layout_weight="1"
             android:checked="true"
             android:text="720p HD (Fast)"
-            android:textColor="@color/text_white"
-            android:textSize="12sp" />
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
 
         <RadioButton
             android:id="@+id/rb1080p"
@@ -56,43 +58,66 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="1080p Full HD"
-            android:textColor="@color/text_white"
-            android:textSize="12sp" />
+            android:textColor="#FFFFFF"
+            android:textSize="13sp" />
     </RadioGroup>
 
-    <!-- Progress Bar -->
-    <ProgressBar
-        android:id="@+id/pbExport"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="16dp"
-        android:max="100"
-        android:progress="0"
-        android:progressTint="@color/accent_yellow"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/tvExportStatus"
+    <!-- InShot-Style Export Progress Section -->
+    <LinearLayout
+        android:id="@+id/layoutExportProgressContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:gravity="center"
-        android:text="Ready to render"
-        android:textColor="@color/text_slate_300"
-        android:textSize="12sp"
-        android:visibility="gone" />
+        android:layout_marginTop="16dp"
+        android:background="#111827"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
 
+        <!-- Percentage Display (InShot style) -->
+        <TextView
+            android:id="@+id/tvExportPercent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="0%"
+            android:textColor="#FACC15"
+            android:textSize="32sp"
+            android:fontFamily="sans-serif-black"
+            android:textStyle="bold" />
+
+        <!-- Horizontal Progress Bar -->
+        <ProgressBar
+            android:id="@+id/pbExport"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="10dp"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="#22C55E" />
+
+        <TextView
+            android:id="@+id/tvExportStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Rendering video frames..."
+            android:textColor="#CBD5E1"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Action Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartRender"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="50dp"
         android:layout_marginTop="20dp"
-        android:backgroundTint="@color/accent_green"
+        android:backgroundTint="#22C55E"
         android:text="🚀 Start Fast Render"
-        android:textColor="@color/text_white"
-        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
         android:textStyle="bold"
-        app:cornerRadius="10dp" />
+        app:cornerRadius="12dp" />
 
 </LinearLayout>

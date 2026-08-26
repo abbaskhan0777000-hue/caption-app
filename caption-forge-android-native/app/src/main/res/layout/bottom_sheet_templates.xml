@@ -14,16 +14,16 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="14dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_dark_pill"
         android:backgroundTint="@color/border_focused" />
 
-    <!-- Title & Subtitle -->
+    <!-- Title & Subtitle (Screenshots 1-5) -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
-        android:text="Styles"
+        android:text="Templates"
         android:textColor="@color/text_primary"
         android:textSize="18sp"
         android:textStyle="bold" />
@@ -36,86 +36,131 @@
         android:textColor="@color/text_secondary"
         android:textSize="13sp" />
 
-    <!-- Tabs Underline Switcher (Styles | Effects) -->
-    <LinearLayout
+    <!-- Horizontal Category Chips Bar (Screenshots 1-5) -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:scrollbars="none">
 
         <LinearLayout
-            android:id="@+id/tabStylesHeader"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
+            <!-- 1. Legacy -->
             <TextView
-                android:id="@+id/tvTabStylesLabel"
+                android:id="@+id/chipCatLegacy"
                 android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_dark_pill"
                 android:gravity="center"
-                android:text="Styles"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
+                android:paddingHorizontal="16dp"
+                android:text="Legacy"
+                android:textColor="@color/text_white"
+                android:textSize="13sp"
                 android:textStyle="bold" />
 
-            <View
-                android:id="@+id/indicatorStyles"
-                android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:background="@color/text_primary" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/tabEffectsHeader"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
+            <!-- 2. Modern -->
             <TextView
-                android:id="@+id/tvTabEffectsLabel"
+                android:id="@+id/chipCatModern"
                 android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_white_button"
                 android:gravity="center"
-                android:text="Effects"
-                android:textColor="@color/text_muted"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:paddingHorizontal="16dp"
+                android:text="Modern"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
 
-            <View
-                android:id="@+id/indicatorEffects"
-                android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:background="@color/border_subtle" />
+            <!-- 3. Viral -->
+            <TextView
+                android:id="@+id/chipCatViral"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_white_button"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="Viral"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <!-- 4. Bold -->
+            <TextView
+                android:id="@+id/chipCatBold"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_white_button"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="Bold"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <!-- 5. Minimal -->
+            <TextView
+                android:id="@+id/chipCatMinimal"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_white_button"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="Minimal"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <!-- 6. Cool -->
+            <TextView
+                android:id="@+id/chipCatCool"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_white_button"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="Cool"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <!-- 7. Split view -->
+            <TextView
+                android:id="@+id/chipCatSplitView"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_white_button"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="Split view"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
         </LinearLayout>
+    </HorizontalScrollView>
 
-    </LinearLayout>
-
-    <!-- 2-Column Grid for Preset Templates -->
+    <!-- Vertical List for Full-Width Preset Template Cards (Screenshots 1-5) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTemplatesGrid"
         android:layout_width="match_parent"
-        android:layout_height="320dp"
+        android:layout_height="310dp"
         android:layout_marginTop="12dp"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="2"
-        tools:listitem="@layout/item_template_card" />
+        android:clipToPadding="false"
+        android:scrollbars="none" />
 
     <!-- Bottom Actions: Cancel & Apply -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="52dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="14dp"
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/btnCancelTemplate"
+            android:id="@+id/btnCancelTemplates"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginEnd="8dp"
@@ -128,7 +173,7 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/btnApplyTemplate"
+            android:id="@+id/btnApplyTemplates"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginStart="8dp"

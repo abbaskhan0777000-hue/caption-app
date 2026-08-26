@@ -13,7 +13,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="4dp"
-        android:layout_marginBottom="14dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_dark_pill"
         android:backgroundTint="@color/border_focused" />
 
@@ -96,11 +96,11 @@
 
     </LinearLayout>
 
-    <!-- Checkered Live Preview Box (Screenshots 2 & 3) -->
+    <!-- Checkered Live Preview Box (Screenshots 1, 2, 3) -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_marginTop="14dp"
+        android:layout_height="90dp"
+        android:layout_marginTop="12dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="0dp"
         app:cardBackgroundColor="#F8FAFC">
@@ -119,7 +119,7 @@
                 android:gravity="center"
                 android:text="EXPRESS WITH BOLD"
                 android:textColor="@color/accent_yellow"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
         </FrameLayout>
     </androidx.cardview.widget.CardView>
@@ -127,7 +127,7 @@
     <!-- Scrollable Content Area for Tab 1 (Styles) and Tab 2 (Effects) -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="240dp"
+        android:layout_height="260dp"
         android:layout_marginTop="12dp"
         android:scrollbars="none">
 
@@ -136,7 +136,9 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- TAB 1 CONTENT: STYLES (Screenshot 2) -->
+            <!-- ============================================== -->
+            <!-- TAB 1 CONTENT: STYLES (Screenshot 1 & 3)       -->
+            <!-- ============================================== -->
             <LinearLayout
                 android:id="@+id/panelTabStyles"
                 android:layout_width="match_parent"
@@ -144,45 +146,52 @@
                 android:orientation="vertical"
                 android:visibility="visible">
 
-                <!-- Font Picker Row -->
+                <!-- 1. Font Selector Card -->
                 <LinearLayout
                     android:id="@+id/rowFontPicker"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="64dp"
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingHorizontal="16dp">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Aa   Font"
-                        android:textColor="@color/text_primary"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/tvSelectedFontName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Montserrat Black"
-                        android:textColor="@color/text_primary"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Aa  Font"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvSelectedFontName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="sans-serif-black"
+                            android:text="Montserrat Black"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:layout_marginStart="8dp"
-                        android:src="@drawable/ic_chevron_right" />
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="@color/text_primary" />
                 </LinearLayout>
 
-                <!-- Font Size Stepper Row -->
+                <!-- 2. Font Size Stepper Card -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="56dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
@@ -193,54 +202,53 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="↕   Size"
+                        android:text="↕  Size"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
+                        android:layout_width="140dp"
+                        android:layout_height="38dp"
                         android:background="@drawable/bg_white_button"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <TextView
                             android:id="@+id/btnSizeMinus"
-                            android:layout_width="36dp"
+                            android:layout_width="40dp"
                             android:layout_height="match_parent"
                             android:gravity="center"
                             android:text="—"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textSize="16sp" />
 
                         <TextView
-                            android:id="@+id/tvFontSizeValue"
-                            android:layout_width="40dp"
-                            android:layout_height="match_parent"
+                            android:id="@+id/tvSizeValue"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:gravity="center"
                             android:text="24"
                             android:textColor="@color/text_primary"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/btnSizePlus"
-                            android:layout_width="36dp"
+                            android:layout_width="40dp"
                             android:layout_height="match_parent"
                             android:gravity="center"
                             android:text="+"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textSize="18sp" />
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Words Per Line / Visibility Row -->
+                <!-- 3. Word Count Per Visibility Stepper Card -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="56dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
@@ -251,54 +259,53 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="📝   Words per line"
+                        android:text="Words per line"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
+                        android:layout_width="140dp"
+                        android:layout_height="38dp"
                         android:background="@drawable/bg_white_button"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <TextView
-                            android:id="@+id/btnWordsMinus"
-                            android:layout_width="36dp"
+                            android:id="@+id/btnWordCountMinus"
+                            android:layout_width="40dp"
                             android:layout_height="match_parent"
                             android:gravity="center"
                             android:text="—"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textSize="16sp" />
 
                         <TextView
-                            android:id="@+id/tvWordsPerLineValue"
-                            android:layout_width="40dp"
-                            android:layout_height="match_parent"
+                            android:id="@+id/tvWordCountValue"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:gravity="center"
                             android:text="3"
                             android:textColor="@color/text_primary"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id="@+id/btnWordsPlus"
-                            android:layout_width="36dp"
+                            android:id="@+id/btnWordCountPlus"
+                            android:layout_width="40dp"
                             android:layout_height="match_parent"
                             android:gravity="center"
                             android:text="+"
                             android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textSize="18sp" />
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Text Style Row: Italic | Bold | Underlined -->
+                <!-- 4. Format Card: Italic, Bold, Underlined -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="54dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
@@ -308,7 +315,7 @@
                     <LinearLayout
                         android:id="@+id/btnItalic"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="38dp"
                         android:layout_marginEnd="6dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_white_button"
@@ -327,7 +334,7 @@
                     <LinearLayout
                         android:id="@+id/btnBold"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="38dp"
                         android:layout_marginHorizontal="3dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_dark_pill"
@@ -346,7 +353,7 @@
                     <LinearLayout
                         android:id="@+id/btnUnderlined"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="38dp"
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_white_button"
@@ -362,10 +369,10 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Text Alignment Row: Left | Center | Right -->
+                <!-- 5. Text Alignment Card (Screenshot 1 & 3) -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="54dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
@@ -375,8 +382,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="12dp"
-                        android:text="Text Alignment"
+                        android:layout_marginEnd="10dp"
+                        android:text="≡ Text Alignment"
                         android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         android:textStyle="bold" />
@@ -384,7 +391,7 @@
                     <LinearLayout
                         android:id="@+id/btnAlignLeft"
                         android:layout_width="0dp"
-                        android:layout_height="34dp"
+                        android:layout_height="36dp"
                         android:layout_marginEnd="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_white_button"
@@ -401,7 +408,7 @@
                     <LinearLayout
                         android:id="@+id/btnAlignCenter"
                         android:layout_width="0dp"
-                        android:layout_height="34dp"
+                        android:layout_height="36dp"
                         android:layout_marginHorizontal="2dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_dark_pill"
@@ -419,7 +426,7 @@
                     <LinearLayout
                         android:id="@+id/btnAlignRight"
                         android:layout_width="0dp"
-                        android:layout_height="34dp"
+                        android:layout_height="36dp"
                         android:layout_marginStart="4dp"
                         android:layout_weight="1"
                         android:background="@drawable/bg_white_button"
@@ -434,9 +441,147 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- 6. Colors Card: Text & Active Word (Screenshot 3) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_white_button"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <!-- Text Color Row -->
+                    <LinearLayout
+                        android:id="@+id/rowTextColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Text"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:id="@+id/boxColorText"
+                            android:layout_width="80dp"
+                            android:layout_height="28dp"
+                            android:background="@drawable/bg_white_button"
+                            android:backgroundTint="#FFFFFF" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="8dp"
+                        android:background="@color/border_subtle" />
+
+                    <!-- Active Word Color Row -->
+                    <LinearLayout
+                        android:id="@+id/rowActiveWordColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Active word"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:id="@+id/boxColorActiveWord"
+                            android:layout_width="80dp"
+                            android:layout_height="28dp"
+                            android:background="@drawable/bg_white_button"
+                            android:backgroundTint="@color/accent_yellow" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- 7. Text Background Toggle & Color (Screenshot 3) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_white_button"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="14dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Text Background"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:id="@+id/boxColorTextBg"
+                        android:layout_width="32dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_dark_pill"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchTextBg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false" />
+                </LinearLayout>
+
+                <!-- 8. Active Word Background Toggle (Screenshot 3) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_white_button"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="14dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Active word background"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:id="@+id/boxColorActiveWordBg"
+                        android:layout_width="32dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_dark_pill"
+                        android:backgroundTint="@color/accent_yellow"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchActiveWordBg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false" />
+                </LinearLayout>
+
             </LinearLayout>
 
-            <!-- TAB 2 CONTENT: EFFECTS (Screenshot 3) -->
+            <!-- ============================================== -->
+            <!-- TAB 2 CONTENT: EFFECTS (Screenshot 2)          -->
+            <!-- ============================================== -->
             <LinearLayout
                 android:id="@+id/panelTabEffects"
                 android:layout_width="match_parent"
@@ -444,13 +589,13 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- Outline Row with Switch -->
+                <!-- 1. Outline Card with Tune Icon & Color Bar (Screenshot 2) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_white_button"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="14dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -474,23 +619,24 @@
                             android:checked="true" />
                     </LinearLayout>
 
-                    <!-- Outline Color Bar -->
+                    <!-- Outline Color Bar Selector (Screenshot 2) -->
                     <View
+                        android:id="@+id/barOutlineColor"
                         android:layout_width="match_parent"
-                        android:layout_height="18dp"
-                        android:layout_marginTop="8dp"
+                        android:layout_height="20dp"
+                        android:layout_marginTop="10dp"
                         android:background="@drawable/bg_dark_pill" />
                 </LinearLayout>
 
-                <!-- Shadow Row with Switch -->
+                <!-- 2. Shadow Card with Switch (Screenshot 2) -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="52dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="12dp">
+                    android:paddingHorizontal="14dp">
 
                     <TextView
                         android:layout_width="0dp"
@@ -505,10 +651,115 @@
                         android:id="@+id/switchShadow"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:checked="false" />
+                        android:checked="true" />
                 </LinearLayout>
 
-                <!-- Vertical Alignment Row: Top | Center | Bottom -->
+                <!-- 3. Vertical Alignment Card (Screenshot 2) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_white_button"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="≡ Vertical Alignment"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/btnVAlignTop"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_white_button"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="↑"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Top"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/btnVAlignCenter"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginHorizontal="2dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_white_button"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="↕"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Center"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/btnVAlignBottom"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_dark_pill"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="↓"
+                                android:textColor="@color/text_white"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="bottom"
+                                android:textColor="@color/text_white"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- 4. Single Line Switch Card (Screenshot 2) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
@@ -516,79 +767,7 @@
                     android:background="@drawable/bg_white_button"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="12dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:text="Vertical Alignment"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:id="@+id/btnVAlignTop"
-                        android:layout_width="0dp"
-                        android:layout_height="34dp"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_white_button"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Top"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnVAlignCenter"
-                        android:layout_width="0dp"
-                        android:layout_height="34dp"
-                        android:layout_marginHorizontal="2dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_white_button"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Center"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnVAlignBottom"
-                        android:layout_width="0dp"
-                        android:layout_height="34dp"
-                        android:layout_marginStart="4dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_dark_pill"
-                        android:gravity="center">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Bottom"
-                            android:textColor="@color/text_white"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Single Line Row with Switch -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_white_button"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="12dp">
+                    android:paddingHorizontal="14dp">
 
                     <TextView
                         android:layout_width="0dp"
@@ -611,7 +790,7 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Actions: Cancel & Apply -->
+    <!-- Bottom Actions: Cancel & Apply (All Screenshots) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="52dp"

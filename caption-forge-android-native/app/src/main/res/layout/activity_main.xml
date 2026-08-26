@@ -165,19 +165,48 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Video Time Indicator (00:04 - 00:50) -->
-            <TextView
-                android:id="@+id/tvTimeCode"
+            <!-- Floating Center Play/Pause Button (CapCut / InShot style) -->
+            <ImageView
+                android:id="@+id/btnCenterPlay"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:background="@drawable/bg_dark_pill"
+                android:backgroundTint="#99000000"
+                android:padding="16dp"
+                android:src="@drawable/ic_play_white"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Video Time Indicator & Play/Pause (00:04 - 00:50) -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="14dp"
                 android:layout_marginBottom="12dp"
-                android:text="00:00 - 00:00"
-                android:textColor="@color/text_white"
-                android:textSize="12sp"
-                android:textStyle="bold"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
                 app:layout_constraintBottom_toTopOf="@+id/videoProgressBar"
-                app:layout_constraintStart_toStartOf="parent" />
+                app:layout_constraintStart_toStartOf="parent">
+
+                <ImageView
+                    android:id="@+id/btnBottomPlayPause"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="6dp"
+                    android:src="@drawable/ic_pause_white" />
+
+                <TextView
+                    android:id="@+id/tvTimeCode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00 - 00:00"
+                    android:textColor="@color/text_white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Video Progress Track -->
             <ProgressBar
