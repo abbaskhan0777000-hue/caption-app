@@ -60,7 +60,7 @@ public class SegmentEditAdapter extends RecyclerView.Adapter<SegmentEditAdapter.
             for (int i = 0; i < rawWords.length; i++) {
                 double wStart = s.start + (i * step);
                 double wEnd = wStart + step;
-                result.add(new WordCaption(rawWords[i], wStart, wEnd, 0.99));
+                result.add(new WordCaption(rawWords[i], wStart, wEnd));
             }
         }
         return result;

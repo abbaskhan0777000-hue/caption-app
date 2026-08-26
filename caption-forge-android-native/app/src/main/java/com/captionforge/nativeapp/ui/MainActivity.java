@@ -231,14 +231,14 @@ public class MainActivity extends AppCompatActivity {
         layoutTranscribeLoading.setVisibility(View.VISIBLE);
         tvTranscribeStatus.setText("Extracting audio stream...");
 
-        AudioExtractor.extractAudioToWav(this, videoUri, new AudioExtractor.ExtractCallback() {
+        AudioExtractor.extractAudioWav(this, videoUri, new AudioExtractor.ExtractCallback() {
             @Override
             public void onSuccess(File wavFile) {
                 runOnUiThread(() -> tvTranscribeStatus.setText("Generating AI Captions with Whisper..."));
 
-                GroqTranscriber.transcribeAudioWithKey(MainActivity.this, wavFile, null, new GroqTranscriber.TranscribeCallback() {
+                GroqTranscriber.transcribe(MainActivity.this, wavFile, new GroqTranscriber.TranscribeCallback() {
                     @Override
-                    public void onSuccess(List<WordCaption> transcribedWords, String fullText) {
+                    public void onSuccess(List<WordCaption> transcribedWords) {
                         runOnUiThread(() -> {
                             layoutTranscribeLoading.setVisibility(View.GONE);
                             words = transcribedWords;
