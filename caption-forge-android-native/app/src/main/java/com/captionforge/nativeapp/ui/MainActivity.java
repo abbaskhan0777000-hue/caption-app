@@ -143,8 +143,14 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> videoPickerLauncher.launch("video/*"));
         findViewById(R.id.btnExport).setOnClickListener(v -> showExportDialog());
 
-        // Empty prompt button
-        findViewById(R.id.btnSelectVideoEmpty).setOnClickListener(v -> videoPickerLauncher.launch("video/*"));
+        // Empty prompt button & container
+        View btnPrompt = findViewById(R.id.btnSelectVideoPrompt);
+        if (btnPrompt != null) {
+            btnPrompt.setOnClickListener(v -> videoPickerLauncher.launch("video/*"));
+        }
+        if (layoutEmptyPrompt != null) {
+            layoutEmptyPrompt.setOnClickListener(v -> videoPickerLauncher.launch("video/*"));
+        }
 
         // Play/Pause button click listeners
         btnCenterPlay.setOnClickListener(v -> togglePlayPause());
