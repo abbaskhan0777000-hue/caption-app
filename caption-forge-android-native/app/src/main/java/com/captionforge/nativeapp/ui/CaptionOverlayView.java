@@ -16,6 +16,7 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 import com.captionforge.nativeapp.engine.AssGenerator;
+import com.captionforge.nativeapp.engine.FontManager;
 import com.captionforge.nativeapp.model.CaptionStyle;
 import com.captionforge.nativeapp.model.WordCaption;
 
@@ -85,7 +86,6 @@ public class CaptionOverlayView extends View {
             public boolean onScale(ScaleGestureDetector detector) {
                 float factor = detector.getScaleFactor();
                 currentScaleSize *= factor;
-                // Clamp size between 12sp and 80sp
                 currentScaleSize = Math.max(12f, Math.min(80f, currentScaleSize));
                 style.fontSize = Math.round(currentScaleSize);
                 invalidate();
@@ -151,7 +151,6 @@ public class CaptionOverlayView extends View {
                 float distX = Math.abs(event.getX() - touchDownX);
                 float distY = Math.abs(event.getY() - touchDownY);
 
-                // Quick tap detection to toggle Play/Pause
                 if (clickDuration < 250 && distX < 20 && distY < 20) {
                     if (tapListener != null) {
                         tapListener.onOverlayTap();
@@ -206,7 +205,7 @@ public class CaptionOverlayView extends View {
             typefaceStyle = Typeface.ITALIC;
         }
 
-        Typeface tf = Typeface.create(style.fontFamily, typefaceStyle);
+        Typeface tf = FontManager.getTypeface(getContext(), style.fontFamily, typefaceStyle);
 
         float density = getResources().getDisplayMetrics().density;
         float textSizePx = style.fontSize * density * 1.0f;
@@ -238,15 +237,22 @@ public class CaptionOverlayView extends View {
             centerY = (style.positionYPercent / 100f) * height;
         }
 
-        // Measure line width
-        StringBuilder fullLine = new StringBuilder();
-        for (WordCaption w : activeChunk.words) {
-            fullLine.append(w.getWord().toUpperCase()).append(" ");
-        }
-        String fullText = fullLine.toString().trim();
-        float totalLineWidth = textPaint.measureText(fullText);
+        // Template-Specific Dynamic Inter-Word Spacing (Eliminates background box bleed)
+        boolean hasActiveWordBox = (style.highlightBgColor != 0 && style.highlightBgColor != Color.TRANSPARENT);
+        float extraSpace = hasActiveWordBox ? (14f * density) : (3f * density);
+        float spaceWidth = textPaint.measureText(" ") + extraSpace;
 
-        // Alignment start X
+        // Calculate exact total line width with custom per-template spacing
+        float totalLineWidth = 0;
+        for (int i = 0; i < activeChunk.words.size(); i++) {
+            WordCaption w = activeChunk.words.get(i);
+            totalLineWidth += textPaint.measureText(w.getWord().toUpperCase());
+            if (i < activeChunk.words.size() - 1) {
+                totalLineWidth += spaceWidth;
+            }
+        }
+
+        // Horizontal Alignment
         float startX;
         if ("left".equalsIgnoreCase(style.textAlign)) {
             startX = 30f * density;
@@ -260,8 +266,8 @@ public class CaptionOverlayView extends View {
         if (style.backgroundColor != 0 && style.backgroundColor != Color.TRANSPARENT) {
             bgBoxPaint.setColor(style.backgroundColor);
             Rect bounds = new Rect();
-            textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
-            float padX = 18f * density;
+            textPaint.getTextBounds("A", 0, 1, bounds);
+            float padX = 16f * density;
             float padY = 10f * density;
             RectF boxRect = new RectF(
                     startX - padX,
@@ -272,22 +278,61 @@ public class CaptionOverlayView extends View {
             canvas.drawRoundRect(boxRect, 10f * density, 10f * density, bgBoxPaint);
         }
 
-        // Draw each word
+        // Animation presets: "pop", "bounce", "glow", "fade", "karaoke", "clean"
+        String animPreset = style.animationPreset != null ? style.animationPreset.toLowerCase() : "karaoke";
+        boolean isPop = animPreset.equals("pop");
+        boolean isBounce = animPreset.equals("bounce");
+        boolean isGlow = animPreset.equals("glow");
+        boolean isFade = animPreset.equals("fade");
+
         float currentX = startX;
+
         for (WordCaption w : activeChunk.words) {
             String wordText = w.getWord().toUpperCase();
             float wordWidth = textPaint.measureText(wordText);
-            float spaceWidth = textPaint.measureText(" ");
 
             boolean isActive = currentPlaybackTime >= w.getStart() && currentPlaybackTime <= w.getEnd();
             Paint currentFillPaint = isActive ? highlightPaint : textPaint;
 
-            // Highlight word background box (e.g. Word Background Change preset)
-            if (isActive && style.highlightBgColor != 0 && style.highlightBgColor != Color.TRANSPARENT) {
+            // Fade mode: subtle alpha on upcoming words, 100% on active
+            if (isFade) {
+                currentFillPaint.setAlpha(isActive ? 255 : 150);
+            } else {
+                currentFillPaint.setAlpha(255);
+            }
+
+            Rect wBounds = new Rect();
+            textPaint.getTextBounds(wordText, 0, wordText.length(), wBounds);
+
+            // Compute dynamic animation transforms for active word
+            boolean needsTransform = isActive && (isPop || isBounce);
+            if (needsTransform) {
+                double dur = Math.max(0.05, w.getEnd() - w.getStart());
+                double progress = Math.min(1.0, Math.max(0.0, (currentPlaybackTime - w.getStart()) / dur));
+
+                float wordCenterX = currentX + (wordWidth / 2f);
+                float wordCenterY = centerY + (wBounds.top + wBounds.bottom) / 2f;
+
+                canvas.save();
+
+                if (isPop) {
+                    float scale;
+                    if (progress < 0.25) {
+                        scale = 1.0f + (float) (progress / 0.25) * 0.15f; // 1.0 -> 1.15
+                    } else {
+                        scale = 1.15f - (float) ((progress - 0.25) / 0.75) * 0.05f; // 1.15 -> 1.10
+                    }
+                    canvas.scale(scale, scale, wordCenterX, wordCenterY);
+                } else if (isBounce) {
+                    float bounceY = (float) (Math.sin(progress * Math.PI) * (-4.5f * density));
+                    canvas.translate(0, bounceY);
+                }
+            }
+
+            // Highlight word background box with isolated non-overlapping padding
+            if (isActive && hasActiveWordBox) {
                 highlightBgPaint.setColor(style.highlightBgColor);
-                Rect wBounds = new Rect();
-                textPaint.getTextBounds(wordText, 0, wordText.length(), wBounds);
-                float hPadX = 8f * density;
+                float hPadX = 6f * density;
                 float hPadY = 6f * density;
                 RectF wBox = new RectF(
                         currentX - hPadX,
@@ -295,7 +340,7 @@ public class CaptionOverlayView extends View {
                         currentX + wordWidth + hPadX,
                         centerY + wBounds.bottom + hPadY
                 );
-                canvas.drawRoundRect(wBox, 8f * density, 8f * density, highlightBgPaint);
+                canvas.drawRoundRect(wBox, 6f * density, 6f * density, highlightBgPaint);
             }
 
             // Stroke outline
@@ -303,8 +348,11 @@ public class CaptionOverlayView extends View {
                 canvas.drawText(wordText, currentX, centerY, strokePaint);
             }
 
-            // Shadow
-            if (style.hasShadow) {
+            // Glow / Shadow Animation
+            if (isActive && isGlow) {
+                int glowColor = (style.shadowColor != 0 && style.shadowColor != Color.TRANSPARENT) ? style.shadowColor : style.highlightColor;
+                currentFillPaint.setShadowLayer(8f * density, 0, 0, glowColor);
+            } else if (style.hasShadow) {
                 currentFillPaint.setShadowLayer(4f * density, 2f * density, 2f * density, style.shadowColor);
             }
 
@@ -312,13 +360,17 @@ public class CaptionOverlayView extends View {
             canvas.drawText(wordText, currentX, centerY, currentFillPaint);
             currentFillPaint.clearShadowLayer();
 
+            if (needsTransform) {
+                canvas.restore();
+            }
+
             currentX += (wordWidth + spaceWidth);
         }
 
-        // When user is dragging or pinching, draw dashed bounding outline box (CapCut/InShot style)
+        // Dashed bounding outline box when pinching or dragging
         if (isDragging || scaleGestureDetector.isInProgress()) {
             Rect bounds = new Rect();
-            textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
+            textPaint.getTextBounds("A", 0, 1, bounds);
             float pad = 12f * density;
             RectF boundRect = new RectF(
                     startX - pad,

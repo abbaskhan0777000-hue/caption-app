@@ -132,13 +132,13 @@ public class NativeVideoBurner {
                     int totalChunks = chunks.size();
                     int frameIndex = 0;
 
-                    for (int cIdx = 0; cIdx < totalChunks; cIdx++) {
+                    for (int cIdx = 0; cIdx < chunks.size(); cIdx++) {
                         AssGenerator.CaptionChunk chunk = chunks.get(cIdx);
                         if (chunk.words.isEmpty()) continue;
 
-                        if ("karaoke".equalsIgnoreCase(style.animationPreset) || "pop".equalsIgnoreCase(style.animationPreset)) {
+                        if (!"clean".equalsIgnoreCase(style.animationPreset)) {
                             for (WordCaption activeWord : chunk.words) {
-                                Bitmap bmp = renderCaptionBitmap(outWidth, outHeight, chunk, activeWord, style);
+                                Bitmap bmp = renderCaptionBitmap(context, outWidth, outHeight, chunk, activeWord, style);
                                 File imgFile = new File(overlaysDir, "frame_" + frameIndex + ".png");
                                 try (FileOutputStream fos = new FileOutputStream(imgFile)) {
                                     bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
@@ -151,7 +151,7 @@ public class NativeVideoBurner {
                                 frameIndex++;
                             }
                         } else {
-                            Bitmap bmp = renderCaptionBitmap(outWidth, outHeight, chunk, null, style);
+                            Bitmap bmp = renderCaptionBitmap(context, outWidth, outHeight, chunk, null, style);
                             File imgFile = new File(overlaysDir, "frame_" + frameIndex + ".png");
                             try (FileOutputStream fos = new FileOutputStream(imgFile)) {
                                 bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
@@ -159,60 +159,64 @@ public class NativeVideoBurner {
                             bmp.recycle();
 
                             double start = Math.max(0, chunk.start);
-                            double end = Math.max(start + 0.1, chunk.end);
+                            double end = Math.max(start + 0.05, chunk.end);
                             frames.add(new OverlayFrame(imgFile, start, end));
                             frameIndex++;
                         }
-
-                        int overlayProgress = 5 + (int) (((cIdx + 1) / (double) totalChunks) * 15);
-                        callback.onProgress(overlayProgress);
                     }
+                    callback.onProgress(18);
+                } else {
+                    Log.i(TAG, "No words provided, exporting direct stream copy...");
                 }
 
+                // 4. Encode & Burn Overlays into Video
+                callback.onProgress(20);
                 tempOutput = new File(cacheDir, "rendered_" + System.currentTimeMillis() + ".mp4");
-
-                // 4. Assemble FFmpeg Hardware Encoding Command
                 List<String> baseArgs = new ArrayList<>();
                 baseArgs.add("-y");
                 baseArgs.add("-i");
                 baseArgs.add(tempInput.getAbsolutePath());
 
-                for (OverlayFrame frame : frames) {
-                    baseArgs.add("-i");
-                    baseArgs.add(frame.imageFile.getAbsolutePath());
-                }
-
+                StringBuilder filterComplex = new StringBuilder();
                 if (!frames.isEmpty()) {
-                    StringBuilder filter = new StringBuilder();
-                    String lastStream = "0:v";
+                    for (OverlayFrame frame : frames) {
+                        baseArgs.add("-i");
+                        baseArgs.add(frame.imageFile.getAbsolutePath());
+                    }
 
+                    String lastOutput = "[0:v]";
                     for (int i = 0; i < frames.size(); i++) {
                         OverlayFrame frame = frames.get(i);
-                        String currentStream = (i == frames.size() - 1) ? "outv" : ("v" + (i + 1));
-                        int inputIdx = i + 1;
-                        filter.append(String.format(Locale.US,
-                                "[%s][%d:v]overlay=0:0:enable='between(t,%.3f,%.3f)'[%s]",
-                                lastStream, inputIdx, frame.startTime, frame.endTime, currentStream));
-
-                        if (i < frames.size() - 1) {
-                            filter.append(";");
+                        String currentOutput = "[v" + (i + 1) + "]";
+                        if (i == frames.size() - 1) {
+                            currentOutput = "[vout]";
                         }
-                        lastStream = currentStream;
+                        filterComplex.append(lastOutput)
+                                .append("[")
+                                .append(i + 1)
+                                .append(":v]overlay=0:0:enable='between(t,")
+                                .append(String.format(Locale.US, "%.3f", frame.startTime))
+                                .append(",")
+                                .append(String.format(Locale.US, "%.3f", frame.endTime))
+                                .append(")'")
+                                .append(currentOutput);
+                        if (i < frames.size() - 1) {
+                            filterComplex.append(";");
+                        }
+                        lastOutput = currentOutput;
                     }
 
                     baseArgs.add("-filter_complex");
-                    baseArgs.add(filter.toString());
+                    baseArgs.add(filterComplex.toString());
                     baseArgs.add("-map");
-                    baseArgs.add("[outv]");
+                    baseArgs.add("[vout]");
                 } else {
                     baseArgs.add("-map");
                     baseArgs.add("0:v");
                 }
-
                 baseArgs.add("-map");
                 baseArgs.add("0:a?");
 
-                // Candidate Video Encoders: Android Hardware MediaCodec GPU -> OpenH264 -> MPEG4
                 String[][] candidateCodecs = new String[][]{
                         {"-c:v", "h264_mediacodec", "-b:v", "5M", "-pix_fmt", "yuv420p"},
                         {"-c:v", "libopenh264", "-b:v", "5M", "-pix_fmt", "yuv420p"},
@@ -224,29 +228,25 @@ public class NativeVideoBurner {
                 final long finalDurMs = Math.max(1000, totalVideoDurationMs);
 
                 for (String[] codecArgs : candidateCodecs) {
-                    if (tempOutput.exists()) {
-                        tempOutput.delete();
-                    }
+                    if (tempOutput.exists()) tempOutput.delete();
                     List<String> fullCmd = new ArrayList<>(baseArgs);
-                    for (String arg : codecArgs) {
-                        fullCmd.add(arg);
-                    }
-                    fullCmd.add("-c:a");
-                    fullCmd.add("aac");
-                    fullCmd.add("-b:a");
-                    fullCmd.add("192k");
+                    for (String arg : codecArgs) fullCmd.add(arg);
+                    fullCmd.add("-c:a"); fullCmd.add("aac");
+                    fullCmd.add("-b:a"); fullCmd.add("192k");
                     fullCmd.add(tempOutput.getAbsolutePath());
 
                     Log.d(TAG, "Trying encoder with real-time statistics: " + codecArgs[1]);
 
-                    CountDownLatch latch = new CountDownLatch(1);
                     AtomicBoolean sessionSuccess = new AtomicBoolean(false);
+                    CountDownLatch latch = new CountDownLatch(1);
 
                     FFmpegSession session = FFmpegKit.executeWithArgumentsAsync(
                             fullCmd.toArray(new String[0]),
                             completedSession -> {
                                 if (ReturnCode.isSuccess(completedSession.getReturnCode())) {
                                     sessionSuccess.set(true);
+                                } else {
+                                    Log.w(TAG, "Encode session failed with return code: " + completedSession.getReturnCode());
                                 }
                                 latch.countDown();
                             },
@@ -256,43 +256,33 @@ public class NativeVideoBurner {
                                     double timeSec = statistics.getTime() / 1000.0;
                                     double totalSec = finalDurMs / 1000.0;
                                     int renderPct = (int) ((timeSec / totalSec) * 75.0);
-                                    int totalPct = Math.min(96, 20 + renderPct);
-                                    callback.onProgress(totalPct);
+                                    callback.onProgress(Math.min(96, 20 + renderPct));
                                 }
                             }
                     );
 
-                    try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        Log.e(TAG, "Interrupted during encode", e);
-                    }
+                    try { latch.await(); } catch (InterruptedException e) { Log.e(TAG, "Interrupted", e); }
 
                     if (sessionSuccess.get()) {
                         success = true;
-                        Log.i(TAG, "Render Succeeded with encoder: " + codecArgs[1]);
                         break;
                     } else {
                         finalError = session != null ? session.getAllLogsAsString() : "Encoder failed";
-                        Log.w(TAG, "Encoder " + codecArgs[1] + " failed, trying next...");
                     }
                 }
 
                 if (success) {
                     callback.onProgress(98);
-                    Log.i(TAG, "Render Succeeded. Inserting to MediaStore Gallery...");
                     String savedName = saveToGallery(context, tempOutput);
                     callback.onProgress(100);
                     cleanup(tempInput, tempOutput, frames, overlaysDir);
                     callback.onSuccess(savedName);
                 } else {
-                    Log.e(TAG, "All video encoders failed: " + finalError);
                     cleanup(tempInput, tempOutput, frames, overlaysDir);
                     callback.onError("Video export failed: " + finalError);
                 }
 
             } catch (Exception e) {
-                Log.e(TAG, "Fatal Burn Exception", e);
                 cleanup(tempInput, tempOutput, frames, overlaysDir);
                 callback.onError("Hardware burn error: " + e.getMessage());
             }
@@ -300,6 +290,7 @@ public class NativeVideoBurner {
     }
 
     private static Bitmap renderCaptionBitmap(
+            Context context,
             int videoWidth,
             int videoHeight,
             AssGenerator.CaptionChunk chunk,
@@ -313,15 +304,11 @@ public class NativeVideoBurner {
         float textSizePx = style.fontSize * scaleFactor * 2.1f;
 
         int typefaceStyle = Typeface.NORMAL;
-        if (style.isBold && style.isItalic) {
-            typefaceStyle = Typeface.BOLD_ITALIC;
-        } else if (style.isBold) {
-            typefaceStyle = Typeface.BOLD;
-        } else if (style.isItalic) {
-            typefaceStyle = Typeface.ITALIC;
-        }
+        if (style.isBold && style.isItalic) typefaceStyle = Typeface.BOLD_ITALIC;
+        else if (style.isBold) typefaceStyle = Typeface.BOLD;
+        else if (style.isItalic) typefaceStyle = Typeface.ITALIC;
 
-        Typeface tf = Typeface.create(style.fontFamily, typefaceStyle);
+        Typeface tf = FontManager.getTypeface(context, style.fontFamily, typefaceStyle);
 
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setTextSize(textSizePx);
@@ -358,13 +345,20 @@ public class NativeVideoBurner {
             centerY = (style.positionYPercent / 100f) * videoHeight;
         }
 
-        // Measure phrase
-        StringBuilder sb = new StringBuilder();
-        for (WordCaption w : chunk.words) {
-            sb.append(w.getWord().toUpperCase()).append(" ");
+        // Template-Specific Dynamic Inter-Word Spacing (Eliminates background box bleed)
+        boolean hasActiveWordBox = (style.highlightBgColor != 0 && style.highlightBgColor != Color.TRANSPARENT);
+        float extraSpace = hasActiveWordBox ? (28f * scaleFactor) : (6f * scaleFactor);
+        float spaceWidth = textPaint.measureText(" ") + extraSpace;
+
+        // Calculate exact total line width with custom per-template spacing
+        float totalLineWidth = 0;
+        for (int i = 0; i < chunk.words.size(); i++) {
+            WordCaption w = chunk.words.get(i);
+            totalLineWidth += textPaint.measureText(w.getWord().toUpperCase());
+            if (i < chunk.words.size() - 1) {
+                totalLineWidth += spaceWidth;
+            }
         }
-        String fullText = sb.toString().trim();
-        float totalLineWidth = textPaint.measureText(fullText);
 
         float startX;
         if ("left".equalsIgnoreCase(style.textAlign)) {
@@ -379,7 +373,7 @@ public class NativeVideoBurner {
         if (style.backgroundColor != 0 && style.backgroundColor != Color.TRANSPARENT) {
             bgBoxPaint.setColor(style.backgroundColor);
             Rect bounds = new Rect();
-            textPaint.getTextBounds(fullText, 0, fullText.length(), bounds);
+            textPaint.getTextBounds("A", 0, 1, bounds);
             float padX = 24f * scaleFactor;
             float padY = 16f * scaleFactor;
             RectF box = new RectF(
@@ -391,23 +385,50 @@ public class NativeVideoBurner {
             canvas.drawRoundRect(box, 16f * scaleFactor, 16f * scaleFactor, bgBoxPaint);
         }
 
-        // Draw words
+        // Animation presets: "pop", "bounce", "glow", "fade", "karaoke", "clean"
+        String animPreset = style.animationPreset != null ? style.animationPreset.toLowerCase() : "karaoke";
+        boolean isPop = animPreset.equals("pop");
+        boolean isBounce = animPreset.equals("bounce");
+        boolean isGlow = animPreset.equals("glow");
+        boolean isFade = animPreset.equals("fade");
+
         float currentX = startX;
+
         for (WordCaption w : chunk.words) {
             String wordText = w.getWord().toUpperCase();
             float wordWidth = textPaint.measureText(wordText);
-            float spaceWidth = textPaint.measureText(" ");
 
             boolean isActive = (activeWord != null && activeWord == w);
             Paint fillPaint = isActive ? highlightPaint : textPaint;
 
-            // Highlight word background box
-            if (isActive && style.highlightBgColor != 0 && style.highlightBgColor != Color.TRANSPARENT) {
+            // Fade mode: subtle alpha on upcoming words, 100% on active
+            if (isFade) {
+                fillPaint.setAlpha(isActive ? 255 : 150);
+            } else {
+                fillPaint.setAlpha(255);
+            }
+
+            Rect wBounds = new Rect();
+            textPaint.getTextBounds(wordText, 0, wordText.length(), wBounds);
+
+            // Pop / Bounce Animation Scale Transform for active word
+            boolean needsTransform = isActive && (isPop || isBounce);
+            if (needsTransform) {
+                float wordCenterX = currentX + (wordWidth / 2f);
+                float wordCenterY = centerY + (wBounds.top + wBounds.bottom) / 2f;
+                canvas.save();
+                if (isPop) {
+                    canvas.scale(1.12f, 1.12f, wordCenterX, wordCenterY);
+                } else if (isBounce) {
+                    canvas.translate(0, -6f * scaleFactor);
+                }
+            }
+
+            // Highlight word background box with isolated non-overlapping padding
+            if (isActive && hasActiveWordBox) {
                 highlightBgPaint.setColor(style.highlightBgColor);
-                Rect wBounds = new Rect();
-                textPaint.getTextBounds(wordText, 0, wordText.length(), wBounds);
-                float hPadX = 12f * scaleFactor;
-                float hPadY = 8f * scaleFactor;
+                float hPadX = 10f * scaleFactor;
+                float hPadY = 10f * scaleFactor;
                 RectF wBox = new RectF(
                         currentX - hPadX,
                         centerY + wBounds.top - hPadY,
@@ -422,14 +443,21 @@ public class NativeVideoBurner {
                 canvas.drawText(wordText, currentX, centerY, strokePaint);
             }
 
-            // Shadow
-            if (style.hasShadow) {
+            // Glow / Shadow Animation
+            if (isActive && isGlow) {
+                int glowColor = (style.shadowColor != 0 && style.shadowColor != Color.TRANSPARENT) ? style.shadowColor : style.highlightColor;
+                fillPaint.setShadowLayer(10f * scaleFactor, 0, 0, glowColor);
+            } else if (style.hasShadow) {
                 fillPaint.setShadowLayer(6f * scaleFactor, 3f * scaleFactor, 3f * scaleFactor, style.shadowColor);
             }
 
             // Text
             canvas.drawText(wordText, currentX, centerY, fillPaint);
             fillPaint.clearShadowLayer();
+
+            if (needsTransform) {
+                canvas.restore();
+            }
 
             currentX += (wordWidth + spaceWidth);
         }

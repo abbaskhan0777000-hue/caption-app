@@ -3,27 +3,35 @@ package com.captionforge.nativeapp.ui;
 import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
 
 import com.captionforge.nativeapp.R;
+import com.captionforge.nativeapp.engine.FontManager;
 import com.captionforge.nativeapp.model.CaptionStyle;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import java.util.List;
 
 public class StylesBottomSheet extends BottomSheetDialogFragment {
 
     public interface OnStylesApplyListener {
-        void onApply(CaptionStyle style);
+        void onApply(CaptionStyle updatedStyle);
     }
 
+    private CaptionStyle initialStyle;
     private CaptionStyle workingStyle;
     private OnStylesApplyListener applyListener;
 
@@ -32,73 +40,100 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
     private TextView tvFontSizeValue;
     private TextView tvWordCountValue;
 
-    private LinearLayout btnItalic, btnBold, btnUnderlined;
-    private TextView tvItalicLabel, tvBoldLabel, tvUnderlineLabel;
+    private View panelStyles;
+    private View panelEffects;
+    private View subIndicatorStyles;
+    private View subIndicatorEffects;
+    private TextView tvTabStylesSubLabel;
+    private TextView tvTabEffectsSubLabel;
 
-    private LinearLayout btnAlignLeft, btnAlignCenter, btnAlignRight;
-    private LinearLayout btnVAlignTop, btnVAlignCenter, btnVAlignBottom;
+    private TextView btnItalic;
+    private TextView btnBold;
+    private TextView btnUnderlined;
 
-    private View boxColorText, boxColorActiveWord, boxColorTextBg, boxColorActiveWordBg, barOutlineColor;
-    private SwitchCompat switchTextBg, switchActiveWordBg, switchOutline, switchShadow, switchSingleLine;
-    private LinearLayout panelStyles, panelEffects;
-    private View subIndicatorStyles, subIndicatorEffects;
-    private TextView tvTabStylesSubLabel, tvTabEffectsSubLabel;
+    private TextView btnAlignLeft;
+    private TextView btnAlignCenter;
+    private TextView btnAlignRight;
 
-    private final String[] fontNames = new String[]{
-            "Montserrat Black", "Impact", "Bebas Neue", "Poppins", "Inter", "Fredoka One", "Cinzel Bold", "Righteous", "Arial Black"
-    };
-    private final String[] fontFamilies = new String[]{
-            "sans-serif-black", "sans-serif-black", "sans-serif-condensed-light", "sans-serif", "sans-serif-medium", "casual", "serif", "cursive", "sans-serif-black"
+    private TextView btnVAlignTop;
+    private TextView btnVAlignCenter;
+    private TextView btnVAlignBottom;
+
+    private View boxColorText;
+    private View boxColorActiveWord;
+    private View boxColorTextBg;
+    private View boxColorActiveWordBg;
+    private View barOutlineColor;
+
+    private SwitchCompat switchTextBg;
+    private SwitchCompat switchActiveWordBg;
+    private SwitchCompat switchOutline;
+    private SwitchCompat switchShadow;
+    private SwitchCompat switchSingleLine;
+
+    private final String[] colorNameOptions = {
+            "Yellow Vibrant (#FACC15)", "Pure White (#FFFFFF)", "Neon Green (#22C55E)", "Electric Cyan (#38BDF8)",
+            "Hot Pink (#EC4899)", "Sunset Orange (#F97316)", "Fiery Red (#EF4444)", "Royal Purple (#8B5CF6)",
+            "Pitch Black (#000000)", "Transparent"
     };
 
-    private final String[] colorNameOptions = new String[]{
-            "White (#FFFFFF)", "Yellow (#FACC15)", "Cyan (#38BDF8)", "Green (#22C55E)", "Pink (#EC4899)", "Red (#EF4444)", "Black (#000000)", "Purple (#8B5CF6)", "Orange (#F97316)"
+    private final int[] colorValueOptions = {
+            Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#22C55E"), Color.parseColor("#38BDF8"),
+            Color.parseColor("#EC4899"), Color.parseColor("#F97316"), Color.parseColor("#EF4444"), Color.parseColor("#8B5CF6"),
+            Color.BLACK, Color.TRANSPARENT
     };
-    private final int[] colorValueOptions = new int[]{
-            Color.parseColor("#FFFFFF"),
-            Color.parseColor("#FACC15"),
-            Color.parseColor("#38BDF8"),
-            Color.parseColor("#22C55E"),
-            Color.parseColor("#EC4899"),
-            Color.parseColor("#EF4444"),
-            Color.parseColor("#000000"),
-            Color.parseColor("#8B5CF6"),
-            Color.parseColor("#F97316")
-    };
+
+    private final ActivityResultLauncher<String[]> fontPickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(),
+            uri -> {
+                if (uri != null && getContext() != null) {
+                    FontManager.FontItem imported = FontManager.importCustomFont(getContext(), uri);
+                    if (imported != null) {
+                        workingStyle.fontFamily = imported.fontIdentifier;
+                        if (tvSelectedFontName != null) {
+                            tvSelectedFontName.setText(imported.displayName);
+                        }
+                        updatePreview();
+                        Toast.makeText(getContext(), "🎉 Imported custom font: " + imported.displayName, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Could not import font. Please select a valid .ttf or .otf file.", Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+    );
 
     public static StylesBottomSheet newInstance(CaptionStyle style, OnStylesApplyListener listener) {
         StylesBottomSheet sheet = new StylesBottomSheet();
-        sheet.workingStyle = cloneStyle(style);
+        sheet.initialStyle = style;
+        sheet.workingStyle = (style != null) ? cloneStyle(style) : new CaptionStyle();
         sheet.applyListener = listener;
         return sheet;
     }
 
     private static CaptionStyle cloneStyle(CaptionStyle s) {
         CaptionStyle c = new CaptionStyle();
-        if (s != null) {
-            c.presetId = s.presetId;
-            c.presetName = s.presetName;
-            c.fontFamily = s.fontFamily;
-            c.fontSize = s.fontSize;
-            c.textColor = s.textColor;
-            c.highlightColor = s.highlightColor;
-            c.strokeColor = s.strokeColor;
-            c.strokeWidth = s.strokeWidth;
-            c.backgroundColor = s.backgroundColor;
-            c.highlightBgColor = s.highlightBgColor;
-            c.hasShadow = s.hasShadow;
-            c.shadowColor = s.shadowColor;
-            c.animationPreset = s.animationPreset;
-            c.positionYPercent = s.positionYPercent;
-            c.wordsPerChunk = s.wordsPerChunk;
-            c.isItalic = s.isItalic;
-            c.isBold = s.isBold;
-            c.isUnderlined = s.isUnderlined;
-            c.textAlign = s.textAlign;
-            c.verticalAlign = s.verticalAlign;
-            c.singleLine = s.singleLine;
-            c.hasOutline = s.hasOutline;
-        }
+        c.presetId = s.presetId;
+        c.presetName = s.presetName;
+        c.fontFamily = s.fontFamily;
+        c.fontSize = s.fontSize;
+        c.textColor = s.textColor;
+        c.highlightColor = s.highlightColor;
+        c.strokeColor = s.strokeColor;
+        c.strokeWidth = s.strokeWidth;
+        c.backgroundColor = s.backgroundColor;
+        c.highlightBgColor = s.highlightBgColor;
+        c.hasShadow = s.hasShadow;
+        c.shadowColor = s.shadowColor;
+        c.animationPreset = s.animationPreset;
+        c.positionYPercent = s.positionYPercent;
+        c.wordsPerChunk = s.wordsPerChunk;
+        c.isItalic = s.isItalic;
+        c.isBold = s.isBold;
+        c.isUnderlined = s.isUnderlined;
+        c.textAlign = s.textAlign;
+        c.verticalAlign = s.verticalAlign;
+        c.singleLine = s.singleLine;
+        c.hasOutline = s.hasOutline;
         return c;
     }
 
@@ -113,8 +148,9 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         setupSteppers(v);
         setupFormatButtons();
         setupAlignmentButtons();
-        setupColorsAndEffects(v);
-        updatePreview();
+        setupVerticalAlignmentButtons();
+        setupColorPickers();
+        setupEffectsSwitches();
 
         v.findViewById(R.id.btnCancelStyles).setOnClickListener(view -> dismiss());
         v.findViewById(R.id.btnApplyStyles).setOnClickListener(view -> {
@@ -124,6 +160,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
             dismiss();
         });
 
+        updatePreview();
         return v;
     }
 
@@ -143,9 +180,6 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         btnItalic = v.findViewById(R.id.btnItalic);
         btnBold = v.findViewById(R.id.btnBold);
         btnUnderlined = v.findViewById(R.id.btnUnderlined);
-        tvItalicLabel = v.findViewById(R.id.tvItalicLabel);
-        tvBoldLabel = v.findViewById(R.id.tvBoldLabel);
-        tvUnderlineLabel = v.findViewById(R.id.tvUnderlineLabel);
 
         btnAlignLeft = v.findViewById(R.id.btnAlignLeft);
         btnAlignCenter = v.findViewById(R.id.btnAlignCenter);
@@ -189,21 +223,42 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void setupFontPicker(View v) {
-        tvSelectedFontName.setText("Montserrat Black");
+        if (workingStyle.fontFamily != null) {
+            String cleanName = workingStyle.fontFamily.substring(workingStyle.fontFamily.lastIndexOf('/') + 1)
+                    .replace(".ttf", "").replace(".otf", "").replace("sans-serif-", "");
+            tvSelectedFontName.setText(cleanName);
+        } else {
+            tvSelectedFontName.setText("Montserrat Black");
+        }
+
         v.findViewById(R.id.rowFontPicker).setOnClickListener(view -> {
+            if (getContext() == null) return;
+            List<FontManager.FontItem> fonts = FontManager.getAllFonts(getContext());
+
+            String[] options = new String[fonts.size() + 1];
+            options[0] = "➕ Import Custom Font (.ttf / .otf)";
+            for (int i = 0; i < fonts.size(); i++) {
+                options[i + 1] = fonts.get(i).displayName;
+            }
+
             new AlertDialog.Builder(getContext())
-                    .setTitle("Choose Font")
-                    .setItems(fontNames, (dialog, which) -> {
-                        workingStyle.fontFamily = fontFamilies[which];
-                        tvSelectedFontName.setText(fontNames[which]);
-                        updatePreview();
+                    .setTitle("Choose / Import Font")
+                    .setItems(options, (dialog, which) -> {
+                        if (which == 0) {
+                            // Launch custom font file picker
+                            fontPickerLauncher.launch(new String[]{"*/*"});
+                        } else {
+                            FontManager.FontItem selected = fonts.get(which - 1);
+                            workingStyle.fontFamily = selected.fontIdentifier;
+                            tvSelectedFontName.setText(selected.displayName);
+                            updatePreview();
+                        }
                     })
                     .show();
         });
     }
 
     private void setupSteppers(View v) {
-        // Font Size Stepper
         if (tvFontSizeValue != null) {
             tvFontSizeValue.setText(String.valueOf(workingStyle.fontSize));
         }
@@ -222,7 +277,6 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
             }
         });
 
-        // Word Count Stepper
         if (tvWordCountValue != null) {
             tvWordCountValue.setText(String.valueOf(workingStyle.wordsPerChunk));
         }
@@ -264,116 +318,111 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
 
     private void updateFormatUI() {
         btnItalic.setBackgroundResource(workingStyle.isItalic ? R.drawable.bg_dark_pill : R.drawable.bg_white_button);
-        tvItalicLabel.setTextColor(workingStyle.isItalic ? Color.WHITE : Color.parseColor("#64748B"));
+        btnItalic.setTextColor(workingStyle.isItalic ? Color.WHITE : Color.parseColor("#0F172A"));
 
         btnBold.setBackgroundResource(workingStyle.isBold ? R.drawable.bg_dark_pill : R.drawable.bg_white_button);
-        tvBoldLabel.setTextColor(workingStyle.isBold ? Color.WHITE : Color.parseColor("#64748B"));
+        btnBold.setTextColor(workingStyle.isBold ? Color.WHITE : Color.parseColor("#0F172A"));
 
         btnUnderlined.setBackgroundResource(workingStyle.isUnderlined ? R.drawable.bg_dark_pill : R.drawable.bg_white_button);
-        tvUnderlineLabel.setTextColor(workingStyle.isUnderlined ? Color.WHITE : Color.parseColor("#64748B"));
+        btnUnderlined.setTextColor(workingStyle.isUnderlined ? Color.WHITE : Color.parseColor("#0F172A"));
     }
 
     private void setupAlignmentButtons() {
         btnAlignLeft.setOnClickListener(v -> {
             workingStyle.textAlign = "left";
-            updateAlignmentUI();
-            updatePreview();
+            updateAlignUI();
         });
-
         btnAlignCenter.setOnClickListener(v -> {
             workingStyle.textAlign = "center";
-            updateAlignmentUI();
-            updatePreview();
+            updateAlignUI();
         });
-
         btnAlignRight.setOnClickListener(v -> {
             workingStyle.textAlign = "right";
-            updateAlignmentUI();
-            updatePreview();
+            updateAlignUI();
         });
 
-        updateAlignmentUI();
+        updateAlignUI();
     }
 
-    private void updateAlignmentUI() {
+    private void updateAlignUI() {
         btnAlignLeft.setBackgroundResource("left".equalsIgnoreCase(workingStyle.textAlign) ? R.drawable.bg_dark_pill : R.drawable.bg_white_button);
         btnAlignCenter.setBackgroundResource("center".equalsIgnoreCase(workingStyle.textAlign) ? R.drawable.bg_dark_pill : R.drawable.bg_white_button);
         btnAlignRight.setBackgroundResource("right".equalsIgnoreCase(workingStyle.textAlign) ? R.drawable.bg_dark_pill : R.drawable.bg_white_button);
     }
 
-    private void setupColorsAndEffects(View v) {
-        // Text Color
-        if (boxColorText != null) {
-            boxColorText.setBackgroundColor(workingStyle.textColor != 0 ? workingStyle.textColor : Color.WHITE);
-        }
-        v.findViewById(R.id.rowTextColor).setOnClickListener(view -> {
-            showColorPickerDialog("Choose Text Color", color -> {
-                workingStyle.textColor = color;
-                if (boxColorText != null) boxColorText.setBackgroundColor(color);
-                updatePreview();
-            });
-        });
+    private void setupColorPickers() {
+        boxColorText.setOnClickListener(v -> showColorPickerDialog("Text Color", color -> {
+            workingStyle.textColor = color;
+            boxColorText.setBackgroundColor(color);
+            updatePreview();
+        }));
 
-        // Active Word Color
-        if (boxColorActiveWord != null) {
-            boxColorActiveWord.setBackgroundColor(workingStyle.highlightColor != 0 ? workingStyle.highlightColor : Color.parseColor("#FACC15"));
-        }
-        v.findViewById(R.id.rowActiveWordColor).setOnClickListener(view -> {
-            showColorPickerDialog("Choose Active Word Color", color -> {
-                workingStyle.highlightColor = color;
-                if (boxColorActiveWord != null) boxColorActiveWord.setBackgroundColor(color);
-                updatePreview();
-            });
-        });
+        boxColorActiveWord.setOnClickListener(v -> showColorPickerDialog("Active Word Color", color -> {
+            workingStyle.highlightColor = color;
+            boxColorActiveWord.setBackgroundColor(color);
+            updatePreview();
+        }));
 
-        // Text Background Switch & Color
+        boxColorTextBg.setOnClickListener(v -> showColorPickerDialog("Text Background Color", color -> {
+            workingStyle.backgroundColor = color;
+            boxColorTextBg.setBackgroundColor(color);
+            updatePreview();
+        }));
+
+        boxColorActiveWordBg.setOnClickListener(v -> showColorPickerDialog("Active Word Background", color -> {
+            workingStyle.highlightBgColor = color;
+            boxColorActiveWordBg.setBackgroundColor(color);
+            updatePreview();
+        }));
+
+        barOutlineColor.setOnClickListener(v -> showColorPickerDialog("Outline Color", color -> {
+            workingStyle.strokeColor = color;
+            barOutlineColor.setBackgroundColor(color);
+            updatePreview();
+        }));
+    }
+
+    private void setupEffectsSwitches() {
         switchTextBg.setChecked(workingStyle.backgroundColor != 0 && workingStyle.backgroundColor != Color.TRANSPARENT);
-        switchTextBg.setOnCheckedChangeListener((btn, isChecked) -> {
-            workingStyle.backgroundColor = isChecked ? Color.parseColor("#99000000") : Color.TRANSPARENT;
-            if (boxColorTextBg != null) boxColorTextBg.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        switchTextBg.setOnCheckedChangeListener((btn, checked) -> {
+            if (!checked) workingStyle.backgroundColor = Color.TRANSPARENT;
+            else if (workingStyle.backgroundColor == 0 || workingStyle.backgroundColor == Color.TRANSPARENT) {
+                workingStyle.backgroundColor = Color.parseColor("#B3000000");
+            }
             updatePreview();
         });
 
-        // Active Word Background Switch & Color
         switchActiveWordBg.setChecked(workingStyle.highlightBgColor != 0 && workingStyle.highlightBgColor != Color.TRANSPARENT);
-        switchActiveWordBg.setOnCheckedChangeListener((btn, isChecked) -> {
-            workingStyle.highlightBgColor = isChecked ? Color.parseColor("#FACC15") : Color.TRANSPARENT;
-            if (boxColorActiveWordBg != null) boxColorActiveWordBg.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        switchActiveWordBg.setOnCheckedChangeListener((btn, checked) -> {
+            if (!checked) workingStyle.highlightBgColor = Color.TRANSPARENT;
+            else if (workingStyle.highlightBgColor == 0 || workingStyle.highlightBgColor == Color.TRANSPARENT) {
+                workingStyle.highlightBgColor = Color.parseColor("#FACC15");
+            }
             updatePreview();
         });
 
-        // Outline Switch & Bar
         switchOutline.setChecked(workingStyle.hasOutline);
-        switchOutline.setOnCheckedChangeListener((btn, isChecked) -> {
-            workingStyle.hasOutline = isChecked;
+        switchOutline.setOnCheckedChangeListener((btn, checked) -> {
+            workingStyle.hasOutline = checked;
             updatePreview();
         });
-        if (barOutlineColor != null) {
-            barOutlineColor.setOnClickListener(view -> {
-                showColorPickerDialog("Choose Outline Color", color -> {
-                    workingStyle.strokeColor = color;
-                    barOutlineColor.setBackgroundColor(color);
-                    updatePreview();
-                });
-            });
-        }
 
-        // Shadow Switch
         switchShadow.setChecked(workingStyle.hasShadow);
-        switchShadow.setOnCheckedChangeListener((btn, isChecked) -> {
-            workingStyle.hasShadow = isChecked;
+        switchShadow.setOnCheckedChangeListener((btn, checked) -> {
+            workingStyle.hasShadow = checked;
             updatePreview();
         });
 
-        // Single Line Switch
-        switchSingleLine.setChecked(workingStyle.singleLine);
-        switchSingleLine.setOnCheckedChangeListener((btn, isChecked) -> {
-            workingStyle.singleLine = isChecked;
-            if (isChecked) workingStyle.wordsPerChunk = 1;
+        switchSingleLine.setChecked(workingStyle.singleLine || workingStyle.wordsPerChunk == 1);
+        switchSingleLine.setOnCheckedChangeListener((btn, checked) -> {
+            workingStyle.singleLine = checked;
+            if (checked) workingStyle.wordsPerChunk = 1;
+            if (tvWordCountValue != null) tvWordCountValue.setText(String.valueOf(workingStyle.wordsPerChunk));
             updatePreview();
         });
+    }
 
-        // Vertical Alignment
+    private void setupVerticalAlignmentButtons() {
         btnVAlignTop.setOnClickListener(view -> {
             workingStyle.verticalAlign = "top";
             updateVAlignUI();
@@ -410,7 +459,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void updatePreview() {
-        if (tvLivePreview == null) return;
+        if (tvLivePreview == null || getContext() == null) return;
 
         int typefaceStyle = Typeface.NORMAL;
         if (workingStyle.isBold && workingStyle.isItalic) {
@@ -421,7 +470,8 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
             typefaceStyle = Typeface.ITALIC;
         }
 
-        tvLivePreview.setTypeface(Typeface.create(workingStyle.fontFamily, typefaceStyle));
+        Typeface tf = FontManager.getTypeface(getContext(), workingStyle.fontFamily, typefaceStyle);
+        tvLivePreview.setTypeface(tf);
         tvLivePreview.setTextSize(Math.max(16, workingStyle.fontSize));
         tvLivePreview.setTextColor(workingStyle.highlightColor != 0 ? workingStyle.highlightColor : Color.parseColor("#FACC15"));
 
