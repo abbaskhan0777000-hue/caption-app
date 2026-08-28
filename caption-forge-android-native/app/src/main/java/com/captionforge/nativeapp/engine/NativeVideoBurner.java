@@ -224,9 +224,9 @@ public class NativeVideoBurner {
                 baseArgs.add("0:a?");
 
                 String[][] candidateCodecs = new String[][]{
-                        {"-c:v", "h264_mediacodec", "-b:v", "5M", "-pix_fmt", "yuv420p"},
-                        {"-c:v", "libopenh264", "-b:v", "5M", "-pix_fmt", "yuv420p"},
-                        {"-c:v", "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p"}
+                        {"-c:v", "h264_mediacodec", "-b:v", "6M", "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30"},
+                        {"-c:v", "libopenh264", "-b:v", "6M", "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30"},
+                        {"-c:v", "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p", "-g", "30"}
                 };
 
                 boolean success = false;
@@ -237,8 +237,15 @@ public class NativeVideoBurner {
                     if (tempOutput.exists()) tempOutput.delete();
                     List<String> fullCmd = new ArrayList<>(baseArgs);
                     for (String arg : codecArgs) fullCmd.add(arg);
+                    
+                    // Audio Standardization & Real-Time Sync (WhatsApp / Social Media Compatibility)
                     fullCmd.add("-c:a"); fullCmd.add("aac");
                     fullCmd.add("-b:a"); fullCmd.add("192k");
+                    fullCmd.add("-ar"); fullCmd.add("44100");
+                    fullCmd.add("-ac"); fullCmd.add("2");
+                    fullCmd.add("-af"); fullCmd.add("aresample=async=1");
+                    fullCmd.add("-avoid_negative_ts"); fullCmd.add("make_zero");
+                    fullCmd.add("-movflags"); fullCmd.add("+faststart");
                     fullCmd.add(tempOutput.getAbsolutePath());
 
                     Log.d(TAG, "Trying encoder with real-time statistics: " + codecArgs[1]);
