@@ -252,12 +252,33 @@ public class CaptionOverlayView extends View {
             }
         }
 
+        // Auto-scale down if text exceeds 92% of screen width (Prevents edge clipping)
+        float maxAllowedWidth = width * 0.92f;
+        if (totalLineWidth > maxAllowedWidth && totalLineWidth > 0) {
+            float fitScale = maxAllowedWidth / totalLineWidth;
+            textSizePx *= fitScale;
+            textPaint.setTextSize(textSizePx);
+            strokePaint.setTextSize(textSizePx);
+            strokePaint.setStrokeWidth(style.hasOutline ? (style.strokeWidth * (density * 0.4f) * fitScale) : 0);
+            highlightPaint.setTextSize(textSizePx);
+            spaceWidth *= fitScale;
+
+            totalLineWidth = 0;
+            for (int i = 0; i < activeChunk.words.size(); i++) {
+                WordCaption w = activeChunk.words.get(i);
+                totalLineWidth += textPaint.measureText(w.getWord().toUpperCase());
+                if (i < activeChunk.words.size() - 1) {
+                    totalLineWidth += spaceWidth;
+                }
+            }
+        }
+
         // Horizontal Alignment
         float startX;
         if ("left".equalsIgnoreCase(style.textAlign)) {
-            startX = 30f * density;
+            startX = 20f * density;
         } else if ("right".equalsIgnoreCase(style.textAlign)) {
-            startX = width - totalLineWidth - (30f * density);
+            startX = width - totalLineWidth - (20f * density);
         } else {
             startX = (width - totalLineWidth) / 2f;
         }

@@ -414,6 +414,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
 
     private void setupColorPickers() {
         if (boxColorText != null) {
+            boxColorText.setBackgroundColor(workingStyle.textColor != 0 ? workingStyle.textColor : Color.WHITE);
             boxColorText.setOnClickListener(v -> showColorPickerDialog("Text Color", color -> {
                 workingStyle.textColor = color;
                 boxColorText.setBackgroundColor(color);
@@ -422,6 +423,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         }
 
         if (boxColorActiveWord != null) {
+            boxColorActiveWord.setBackgroundColor(workingStyle.highlightColor != 0 ? workingStyle.highlightColor : Color.parseColor("#FACC15"));
             boxColorActiveWord.setOnClickListener(v -> showColorPickerDialog("Active Word Color", color -> {
                 workingStyle.highlightColor = color;
                 boxColorActiveWord.setBackgroundColor(color);
@@ -430,6 +432,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         }
 
         if (boxColorTextBg != null) {
+            boxColorTextBg.setBackgroundColor((workingStyle.backgroundColor != 0 && workingStyle.backgroundColor != Color.TRANSPARENT) ? workingStyle.backgroundColor : Color.parseColor("#B3000000"));
             boxColorTextBg.setOnClickListener(v -> showColorPickerDialog("Text Background Color", color -> {
                 workingStyle.backgroundColor = color;
                 boxColorTextBg.setBackgroundColor(color);
@@ -438,6 +441,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         }
 
         if (boxColorActiveWordBg != null) {
+            boxColorActiveWordBg.setBackgroundColor((workingStyle.highlightBgColor != 0 && workingStyle.highlightBgColor != Color.TRANSPARENT) ? workingStyle.highlightBgColor : Color.parseColor("#FACC15"));
             boxColorActiveWordBg.setOnClickListener(v -> showColorPickerDialog("Active Word Background", color -> {
                 workingStyle.highlightBgColor = color;
                 boxColorActiveWordBg.setBackgroundColor(color);
@@ -446,6 +450,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         }
 
         if (barOutlineColor != null) {
+            barOutlineColor.setBackgroundColor(workingStyle.strokeColor != 0 ? workingStyle.strokeColor : Color.BLACK);
             barOutlineColor.setOnClickListener(v -> showColorPickerDialog("Outline Color", color -> {
                 workingStyle.strokeColor = color;
                 barOutlineColor.setBackgroundColor(color);

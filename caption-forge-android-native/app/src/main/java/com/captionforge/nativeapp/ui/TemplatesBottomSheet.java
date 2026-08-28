@@ -47,13 +47,19 @@ public class TemplatesBottomSheet extends BottomSheetDialogFragment {
         setupRecyclerView(view);
         setupCategoryChips();
 
-        view.findViewById(R.id.btnCancelTemplates).setOnClickListener(v -> dismiss());
-        view.findViewById(R.id.btnApplyTemplates).setOnClickListener(v -> {
-            if (applyListener != null && selectedStyle != null) {
-                applyListener.onApply(selectedStyle);
-            }
-            dismiss();
-        });
+        View btnCancel = view.findViewById(R.id.btnCancelTemplates);
+        if (btnCancel != null) btnCancel.setOnClickListener(v -> dismiss());
+
+        View btnApply = view.findViewById(R.id.btnApplyTemplates);
+        if (btnApply != null) {
+            btnApply.setOnClickListener(v -> {
+                CaptionStyle toApply = (selectedStyle != null) ? selectedStyle : (adapter != null ? adapter.getSelectedStyle() : null);
+                if (applyListener != null && toApply != null) {
+                    applyListener.onApply(toApply);
+                }
+                dismiss();
+            });
+        }
 
         return view;
     }
@@ -68,23 +74,25 @@ public class TemplatesBottomSheet extends BottomSheetDialogFragment {
         chipSplitView = view.findViewById(R.id.chipCatSplitView);
 
         allChips.clear();
-        allChips.add(chipLegacy);
-        allChips.add(chipModern);
-        allChips.add(chipViral);
-        allChips.add(chipBold);
-        allChips.add(chipMinimal);
-        allChips.add(chipCool);
-        allChips.add(chipSplitView);
+        if (chipLegacy != null) allChips.add(chipLegacy);
+        if (chipModern != null) allChips.add(chipModern);
+        if (chipViral != null) allChips.add(chipViral);
+        if (chipBold != null) allChips.add(chipBold);
+        if (chipMinimal != null) allChips.add(chipMinimal);
+        if (chipCool != null) allChips.add(chipCool);
+        if (chipSplitView != null) allChips.add(chipSplitView);
     }
 
     private void setupRecyclerView(View view) {
         RecyclerView rv = view.findViewById(R.id.rvTemplatesGrid);
-        rv.setLayoutManager(new LinearLayoutManager(getContext()));
-
-        adapter = new TemplateCardAdapter(style -> {
-            this.selectedStyle = style;
-        });
-        rv.setAdapter(adapter);
+        if (rv != null) {
+            rv.setLayoutManager(new LinearLayoutManager(getContext()));
+            adapter = new TemplateCardAdapter(style -> {
+                this.selectedStyle = style;
+            });
+            this.selectedStyle = adapter.getSelectedStyle();
+            rv.setAdapter(adapter);
+        }
     }
 
     private void setupCategoryChips() {

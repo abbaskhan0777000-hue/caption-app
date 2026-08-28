@@ -658,6 +658,15 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         allItems.add(new TemplateItem("sp_emerald_tech", "Split view", "EMERALD TECH 2-LINE", sp4, sSp4));
     }
 
+    public CaptionStyle getSelectedStyle() {
+        for (TemplateItem item : allItems) {
+            if (item.id.equals(selectedId)) {
+                return item.style;
+            }
+        }
+        return !allItems.isEmpty() ? allItems.get(0).style : new CaptionStyle();
+    }
+
     public void filterByCategory(String category) {
         this.currentCategory = category;
         displayedItems.clear();

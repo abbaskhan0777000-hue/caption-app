@@ -137,7 +137,8 @@ public class NativeVideoBurner {
                         if (chunk.words.isEmpty()) continue;
 
                         if (!"clean".equalsIgnoreCase(style.animationPreset)) {
-                            for (WordCaption activeWord : chunk.words) {
+                            for (int wIdx = 0; wIdx < chunk.words.size(); wIdx++) {
+                                WordCaption activeWord = chunk.words.get(wIdx);
                                 Bitmap bmp = renderCaptionBitmap(context, outWidth, outHeight, chunk, activeWord, style);
                                 File imgFile = new File(overlaysDir, "frame_" + frameIndex + ".png");
                                 try (FileOutputStream fos = new FileOutputStream(imgFile)) {
@@ -145,8 +146,13 @@ public class NativeVideoBurner {
                                 }
                                 bmp.recycle();
 
-                                double start = Math.max(0, activeWord.getStart());
-                                double end = Math.max(start + 0.05, activeWord.getEnd());
+                                double start = (wIdx == 0) ? Math.max(0, chunk.start) : Math.max(0, activeWord.getStart());
+                                double end;
+                                if (wIdx < chunk.words.size() - 1) {
+                                    end = Math.max(start + 0.05, chunk.words.get(wIdx + 1).getStart());
+                                } else {
+                                    end = Math.max(start + 0.05, chunk.end);
+                                }
                                 frames.add(new OverlayFrame(imgFile, start, end));
                                 frameIndex++;
                             }
@@ -360,11 +366,32 @@ public class NativeVideoBurner {
             }
         }
 
+        // Auto-scale down if text exceeds 92% of video width (Prevents edge clipping)
+        float maxAllowedWidth = videoWidth * 0.92f;
+        if (totalLineWidth > maxAllowedWidth && totalLineWidth > 0) {
+            float fitScale = maxAllowedWidth / totalLineWidth;
+            textSizePx *= fitScale;
+            textPaint.setTextSize(textSizePx);
+            strokePaint.setTextSize(textSizePx);
+            strokePaint.setStrokeWidth(style.hasOutline ? (style.strokeWidth * scaleFactor * 0.9f * fitScale) : 0);
+            highlightPaint.setTextSize(textSizePx);
+            spaceWidth *= fitScale;
+
+            totalLineWidth = 0;
+            for (int i = 0; i < chunk.words.size(); i++) {
+                WordCaption w = chunk.words.get(i);
+                totalLineWidth += textPaint.measureText(w.getWord().toUpperCase());
+                if (i < chunk.words.size() - 1) {
+                    totalLineWidth += spaceWidth;
+                }
+            }
+        }
+
         float startX;
         if ("left".equalsIgnoreCase(style.textAlign)) {
-            startX = 60f * scaleFactor;
+            startX = 40f * scaleFactor;
         } else if ("right".equalsIgnoreCase(style.textAlign)) {
-            startX = videoWidth - totalLineWidth - (60f * scaleFactor);
+            startX = videoWidth - totalLineWidth - (40f * scaleFactor);
         } else {
             startX = (videoWidth - totalLineWidth) / 2f;
         }
