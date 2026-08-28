@@ -684,12 +684,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
 
         boolean isSelected = item.id.equals(selectedId);
         if (isSelected) {
-            holder.card.setCardBackgroundColor(Color.parseColor("#1E232A"));
-            holder.card.setForeground(holder.itemView.getContext().getDrawable(R.drawable.bg_dark_pill));
+            holder.card.setCardBackgroundColor(Color.parseColor("#1E293B"));
             holder.tvName.setTextColor(Color.parseColor("#38BDF8"));
         } else {
-            holder.card.setCardBackgroundColor(Color.parseColor("#2A2C32"));
-            holder.card.setForeground(null);
+            holder.card.setCardBackgroundColor(Color.parseColor("#18202F"));
             holder.tvName.setTextColor(Color.parseColor("#64748B"));
         }
 
