@@ -106,24 +106,51 @@ public class NativeVideoBurner {
                         totalVideoDurationMs = Long.parseLong(durStr);
                     }
 
+                    int rawW = 720, rawH = 1280;
                     if (widthStr != null && heightStr != null) {
-                        int rawW = Integer.parseInt(widthStr);
-                        int rawH = Integer.parseInt(heightStr);
+                        int w = Integer.parseInt(widthStr);
+                        int h = Integer.parseInt(heightStr);
                         int rotation = (rotationStr != null) ? Integer.parseInt(rotationStr) : 0;
                         if (rotation == 90 || rotation == 270) {
-                            outWidth = rawH;
-                            outHeight = rawW;
+                            rawW = h;
+                            rawH = w;
                         } else {
-                            outWidth = rawW;
-                            outHeight = rawH;
+                            rawW = w;
+                            rawH = h;
                         }
                     }
+
+                    // True Resolution Calculation based on User's Choice (720p vs 1080p)
+                    boolean is1080p = "1080p".equalsIgnoreCase(resolution);
+                    if (is1080p) {
+                        if (rawH >= rawW) { // Vertical or Square video
+                            outWidth = 1080;
+                            outHeight = (int) Math.round(1080.0 * rawH / rawW);
+                        } else { // Landscape / Horizontal video
+                            outHeight = 1080;
+                            outWidth = (int) Math.round(1080.0 * rawW / rawH);
+                        }
+                    } else { // 720p
+                        if (rawH >= rawW) {
+                            outWidth = 720;
+                            outHeight = (int) Math.round(720.0 * rawH / rawW);
+                        } else {
+                            outHeight = 720;
+                            outWidth = (int) Math.round(720.0 * rawW / rawH);
+                        }
+                    }
+
+                    // Ensure dimensions are even numbers (Required by H.264 video encoders)
+                    outWidth = (outWidth / 2) * 2;
+                    outHeight = (outHeight / 2) * 2;
+
                 } catch (Exception ignored) {
-                    outWidth = "1080p".equalsIgnoreCase(resolution) ? 1080 : 720;
-                    outHeight = "1080p".equalsIgnoreCase(resolution) ? 1920 : 1280;
+                    boolean is1080p = "1080p".equalsIgnoreCase(resolution);
+                    outWidth = is1080p ? 1080 : 720;
+                    outHeight = is1080p ? 1920 : 1280;
                 }
 
-                Log.d(TAG, "Target video: " + outWidth + "x" + outHeight + " Duration: " + totalVideoDurationMs + "ms");
+                Log.d(TAG, "Target video (" + resolution + "): " + outWidth + "x" + outHeight + " Duration: " + totalVideoDurationMs + "ms");
                 callback.onProgress(5);
 
                 // 3. Generate Hardware Bitmap Overlays with EXACT Millisecond Timestamps (No artificial padding!)
@@ -183,21 +210,22 @@ public class NativeVideoBurner {
                 baseArgs.add("-i");
                 baseArgs.add(tempInput.getAbsolutePath());
 
-                StringBuilder filterComplex = new StringBuilder();
-                if (!frames.isEmpty()) {
-                    for (OverlayFrame frame : frames) {
-                        baseArgs.add("-i");
-                        baseArgs.add(frame.imageFile.getAbsolutePath());
-                    }
+                for (OverlayFrame frame : frames) {
+                    baseArgs.add("-i");
+                    baseArgs.add(frame.imageFile.getAbsolutePath());
+                }
 
-                    String lastOutput = "[0:v]";
+                // Build Filter Complex: 1. Scale Video -> 2. Overlay Frames
+                StringBuilder filterComplex = new StringBuilder();
+                filterComplex.append("[0:v]scale=").append(outWidth).append(":").append(outHeight).append("[vscaled]");
+
+                if (!frames.isEmpty()) {
+                    String lastOutput = "[vscaled]";
                     for (int i = 0; i < frames.size(); i++) {
                         OverlayFrame frame = frames.get(i);
-                        String currentOutput = "[v" + (i + 1) + "]";
-                        if (i == frames.size() - 1) {
-                            currentOutput = "[vout]";
-                        }
-                        filterComplex.append(lastOutput)
+                        String currentOutput = (i == frames.size() - 1) ? "[vout]" : ("[v" + (i + 1) + "]");
+                        filterComplex.append(";")
+                                .append(lastOutput)
                                 .append("[")
                                 .append(i + 1)
                                 .append(":v]overlay=0:0:enable='between(t,")
@@ -206,27 +234,26 @@ public class NativeVideoBurner {
                                 .append(String.format(Locale.US, "%.3f", frame.endTime))
                                 .append(")'")
                                 .append(currentOutput);
-                        if (i < frames.size() - 1) {
-                            filterComplex.append(";");
-                        }
                         lastOutput = currentOutput;
                     }
-
-                    baseArgs.add("-filter_complex");
-                    baseArgs.add(filterComplex.toString());
-                    baseArgs.add("-map");
-                    baseArgs.add("[vout]");
                 } else {
-                    baseArgs.add("-map");
-                    baseArgs.add("0:v");
+                    filterComplex.append(";[vscaled]null[vout]");
                 }
+
+                baseArgs.add("-filter_complex");
+                baseArgs.add(filterComplex.toString());
+                baseArgs.add("-map");
+                baseArgs.add("[vout]");
                 baseArgs.add("-map");
                 baseArgs.add("0:a?");
 
+                boolean is1080p = "1080p".equalsIgnoreCase(resolution);
+                String videoBitrate = is1080p ? "8M" : "3.5M";
+
                 String[][] candidateCodecs = new String[][]{
-                        {"-c:v", "h264_mediacodec", "-b:v", "6M", "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30"},
-                        {"-c:v", "libopenh264", "-b:v", "6M", "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30"},
-                        {"-c:v", "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p", "-g", "30"}
+                        {"-c:v", "h264_mediacodec", "-b:v", videoBitrate, "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30"},
+                        {"-c:v", "libopenh264", "-b:v", videoBitrate, "-pix_fmt", "yuv420p", "-g", "30", "-keyint_min", "30"},
+                        {"-c:v", "mpeg4", "-q:v", is1080p ? "2" : "4", "-pix_fmt", "yuv420p", "-g", "30"}
                 };
 
                 boolean success = false;
