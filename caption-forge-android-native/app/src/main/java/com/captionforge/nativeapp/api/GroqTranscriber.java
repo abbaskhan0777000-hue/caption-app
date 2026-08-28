@@ -118,6 +118,26 @@ public class GroqTranscriber {
                         }
                     }
 
+                    // Fallback to parse words from segments array if root words array is empty
+                    if (words.isEmpty() && jsonObject.has("segments") && jsonObject.get("segments").isJsonArray()) {
+                        JsonArray segmentsArray = jsonObject.getAsJsonArray("segments");
+                        for (JsonElement sElem : segmentsArray) {
+                            JsonObject sObj = sElem.getAsJsonObject();
+                            if (sObj.has("words") && sObj.get("words").isJsonArray()) {
+                                JsonArray subWords = sObj.getAsJsonArray("words");
+                                for (JsonElement elem : subWords) {
+                                    JsonObject wObj = elem.getAsJsonObject();
+                                    String text = wObj.has("word") ? wObj.get("word").getAsString() : "";
+                                    double start = wObj.has("start") ? wObj.get("start").getAsDouble() : 0;
+                                    double end = wObj.has("end") ? wObj.get("end").getAsDouble() : 0;
+                                    if (!text.trim().isEmpty()) {
+                                        words.add(new WordCaption(text.trim(), start, end));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (words.isEmpty()) {
                         callback.onError("No speech detected in audio track.");
                     } else {
