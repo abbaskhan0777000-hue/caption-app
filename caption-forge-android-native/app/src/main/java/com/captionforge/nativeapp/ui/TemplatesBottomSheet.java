@@ -96,15 +96,15 @@ public class TemplatesBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void setupCategoryChips() {
-        chipLegacy.setOnClickListener(v -> selectCategory("Legacy", chipLegacy));
-        chipModern.setOnClickListener(v -> selectCategory("Modern", chipModern));
-        chipViral.setOnClickListener(v -> selectCategory("Viral", chipViral));
-        chipBold.setOnClickListener(v -> selectCategory("Bold", chipBold));
-        chipMinimal.setOnClickListener(v -> selectCategory("Minimal", chipMinimal));
-        chipCool.setOnClickListener(v -> selectCategory("Cool", chipCool));
-        chipSplitView.setOnClickListener(v -> selectCategory("Split view", chipSplitView));
+        if (chipLegacy != null) chipLegacy.setOnClickListener(v -> selectCategory("Legacy", chipLegacy));
+        if (chipModern != null) chipModern.setOnClickListener(v -> selectCategory("Modern", chipModern));
+        if (chipViral != null) chipViral.setOnClickListener(v -> selectCategory("Viral", chipViral));
+        if (chipBold != null) chipBold.setOnClickListener(v -> selectCategory("Bold", chipBold));
+        if (chipMinimal != null) chipMinimal.setOnClickListener(v -> selectCategory("Minimal", chipMinimal));
+        if (chipCool != null) chipCool.setOnClickListener(v -> selectCategory("Cool", chipCool));
+        if (chipSplitView != null) chipSplitView.setOnClickListener(v -> selectCategory("Split view", chipSplitView));
 
-        selectCategory("Legacy", chipLegacy);
+        if (chipLegacy != null) selectCategory("Legacy", chipLegacy);
     }
 
     private void selectCategory(String category, TextView activeChip) {

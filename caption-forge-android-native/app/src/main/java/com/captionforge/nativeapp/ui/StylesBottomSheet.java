@@ -1,6 +1,7 @@
 package com.captionforge.nativeapp.ui;
 
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -259,7 +260,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
                     options[i + 1] = fonts.get(i).displayName;
                 }
 
-                new AlertDialog.Builder(getContext())
+                new MaterialAlertDialogBuilder(requireContext())
                         .setTitle("Choose / Import Font")
                         .setItems(options, (dialog, which) -> {
                             if (which == 0) {
@@ -538,7 +539,7 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
 
     private void showColorPickerDialog(String title, OnColorSelected listener) {
         if (getContext() == null) return;
-        new AlertDialog.Builder(getContext())
+        new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(title)
                 .setItems(colorNameOptions, (dialog, which) -> {
                     listener.onSelected(colorValueOptions[which]);

@@ -2,7 +2,8 @@ package com.captionforge.nativeapp.ui;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -315,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
         TextView tvExportStatus = dialogView.findViewById(R.id.tvExportStatus);
         MaterialButton btnStartRender = dialogView.findViewById(R.id.btnStartRender);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
                 .setView(dialogView)
                 .setCancelable(true)
                 .create();
