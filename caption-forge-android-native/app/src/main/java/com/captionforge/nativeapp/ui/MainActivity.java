@@ -220,22 +220,32 @@ public class MainActivity extends AppCompatActivity {
 
         // 2. Templates
         findViewById(R.id.tabTemplates).setOnClickListener(v -> {
-            TemplatesBottomSheet sheet = TemplatesBottomSheet.newInstance(selectedStyle -> {
-                this.currentStyle = selectedStyle;
-                captionOverlay.setStyle(currentStyle);
-                updateSegmentChips();
-            });
-            sheet.show(getSupportFragmentManager(), "TemplatesSheet");
+            if (isFinishing() || isDestroyed()) return;
+            try {
+                TemplatesBottomSheet sheet = TemplatesBottomSheet.newInstance(selectedStyle -> {
+                    this.currentStyle = selectedStyle;
+                    captionOverlay.setStyle(currentStyle);
+                    updateSegmentChips();
+                });
+                sheet.show(getSupportFragmentManager(), "TemplatesSheet");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
 
         // 3. Styles
         findViewById(R.id.tabStyles).setOnClickListener(v -> {
-            StylesBottomSheet sheet = StylesBottomSheet.newInstance(currentStyle, updatedStyle -> {
-                this.currentStyle = updatedStyle;
-                captionOverlay.setStyle(currentStyle);
-                updateSegmentChips();
-            });
-            sheet.show(getSupportFragmentManager(), "StylesSheet");
+            if (isFinishing() || isDestroyed()) return;
+            try {
+                StylesBottomSheet sheet = StylesBottomSheet.newInstance(currentStyle, updatedStyle -> {
+                    this.currentStyle = updatedStyle;
+                    captionOverlay.setStyle(currentStyle);
+                    updateSegmentChips();
+                });
+                sheet.show(getSupportFragmentManager(), "StylesSheet");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
     }
 
@@ -303,82 +313,91 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showExportDialog() {
+        if (isFinishing() || isDestroyed()) return;
         if (currentVideoUri == null) {
             Toast.makeText(this, "Please choose a video first", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_export, null);
-        RadioGroup rgResolution = dialogView.findViewById(R.id.rgResolution);
-        View layoutProgress = dialogView.findViewById(R.id.layoutExportProgressContainer);
-        TextView tvExportPercent = dialogView.findViewById(R.id.tvExportPercent);
-        ProgressBar pbExport = dialogView.findViewById(R.id.pbExport);
-        TextView tvExportStatus = dialogView.findViewById(R.id.tvExportStatus);
-        MaterialButton btnStartRender = dialogView.findViewById(R.id.btnStartRender);
+        try {
+            View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_export, null);
+            RadioGroup rgResolution = dialogView.findViewById(R.id.rgResolution);
+            View layoutProgress = dialogView.findViewById(R.id.layoutExportProgressContainer);
+            TextView tvExportPercent = dialogView.findViewById(R.id.tvExportPercent);
+            ProgressBar pbExport = dialogView.findViewById(R.id.pbExport);
+            TextView tvExportStatus = dialogView.findViewById(R.id.tvExportStatus);
+            MaterialButton btnStartRender = dialogView.findViewById(R.id.btnStartRender);
 
-        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
-                .setView(dialogView)
-                .setCancelable(true)
-                .create();
+            AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                    .setView(dialogView)
+                    .setCancelable(true)
+                    .create();
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+
+            btnStartRender.setOnClickListener(v -> {
+                String resolution = (rgResolution.getCheckedRadioButtonId() == R.id.rb1080p) ? "1080p" : "720p";
+
+                btnStartRender.setEnabled(false);
+                btnStartRender.setVisibility(View.GONE);
+                layoutProgress.setVisibility(View.VISIBLE);
+                tvExportPercent.setText("0%");
+                pbExport.setProgress(0);
+                tvExportStatus.setText("Generating crisp hardware overlays...");
+
+                NativeVideoBurner.burnCaptionsToGallery(
+                        MainActivity.this,
+                        currentVideoUri,
+                        words,
+                        currentStyle,
+                        resolution,
+                        new NativeVideoBurner.BurnCallback() {
+                            @Override
+                            public void onProgress(int percentage) {
+                                runOnUiThread(() -> {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    pbExport.setProgress(percentage);
+                                    tvExportPercent.setText(percentage + "%");
+                                    if (percentage < 20) {
+                                        tvExportStatus.setText("Generating hardware overlay frames...");
+                                    } else if (percentage < 95) {
+                                        tvExportStatus.setText("Encoding GPU video stream (" + percentage + "%)...");
+                                    } else {
+                                        tvExportStatus.setText("Saving to Gallery...");
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onSuccess(String galleryLocation) {
+                                runOnUiThread(() -> {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    dialog.dismiss();
+                                    Toast.makeText(MainActivity.this, "🎉 Saved to Gallery! " + galleryLocation, Toast.LENGTH_LONG).show();
+                                });
+                            }
+
+                            @Override
+                            public void onError(String error) {
+                                runOnUiThread(() -> {
+                                    if (isFinishing() || isDestroyed()) return;
+                                    btnStartRender.setEnabled(true);
+                                    btnStartRender.setVisibility(View.VISIBLE);
+                                    layoutProgress.setVisibility(View.GONE);
+                                    Toast.makeText(MainActivity.this, "Export error: " + error, Toast.LENGTH_LONG).show();
+                                });
+                            }
+                        }
+                );
+            });
+
+            dialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Export error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-
-        btnStartRender.setOnClickListener(v -> {
-            String resolution = (rgResolution.getCheckedRadioButtonId() == R.id.rb1080p) ? "1080p" : "720p";
-
-            btnStartRender.setEnabled(false);
-            btnStartRender.setVisibility(View.GONE);
-            layoutProgress.setVisibility(View.VISIBLE);
-            tvExportPercent.setText("0%");
-            pbExport.setProgress(0);
-            tvExportStatus.setText("Generating crisp hardware overlays...");
-
-            NativeVideoBurner.burnCaptionsToGallery(
-                    MainActivity.this,
-                    currentVideoUri,
-                    words,
-                    currentStyle,
-                    resolution,
-                    new NativeVideoBurner.BurnCallback() {
-                        @Override
-                        public void onProgress(int percentage) {
-                            runOnUiThread(() -> {
-                                pbExport.setProgress(percentage);
-                                tvExportPercent.setText(percentage + "%");
-                                if (percentage < 20) {
-                                    tvExportStatus.setText("Generating hardware overlay frames...");
-                                } else if (percentage < 95) {
-                                    tvExportStatus.setText("Encoding GPU video stream (" + percentage + "%)...");
-                                } else {
-                                    tvExportStatus.setText("Saving to Gallery...");
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onSuccess(String galleryLocation) {
-                            runOnUiThread(() -> {
-                                dialog.dismiss();
-                                Toast.makeText(MainActivity.this, "🎉 Saved to Gallery! " + galleryLocation, Toast.LENGTH_LONG).show();
-                            });
-                        }
-
-                        @Override
-                        public void onError(String error) {
-                            runOnUiThread(() -> {
-                                btnStartRender.setEnabled(true);
-                                btnStartRender.setVisibility(View.VISIBLE);
-                                layoutProgress.setVisibility(View.GONE);
-                                Toast.makeText(MainActivity.this, "Export error: " + error, Toast.LENGTH_LONG).show();
-                            });
-                        }
-                    }
-            );
-        });
-
-        dialog.show();
     }
 
     private void checkPermissions() {
