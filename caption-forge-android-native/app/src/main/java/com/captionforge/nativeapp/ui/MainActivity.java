@@ -38,12 +38,15 @@ import com.captionforge.nativeapp.audio.AudioExtractor;
 import com.captionforge.nativeapp.engine.NativeVideoBurner;
 import com.captionforge.nativeapp.model.CaptionStyle;
 import com.captionforge.nativeapp.model.WordCaption;
-import com.google.android.material.button.MaterialButton;
-
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import com.captionforge.nativeapp.CrashHandler;
+import com.google.android.material.button.MaterialButton;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQ_CODE = 100;
@@ -107,13 +110,39 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        CrashHandler.init(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        checkPreviousCrash();
         initViews();
         setupPlayer();
         checkPermissions();
         setupBottomTools();
+    }
+
+    private void checkPreviousCrash() {
+        try {
+            File file = new File(getFilesDir(), "last_crash.txt");
+            if (file.exists()) {
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                }
+                file.delete();
+                String crashLog = sb.toString();
+                if (!crashLog.trim().isEmpty()) {
+                    new MaterialAlertDialogBuilder(this)
+                            .setTitle("⚠️ Error Log Recorded")
+                            .setMessage(crashLog.length() > 600 ? crashLog.substring(0, 600) + "..." : crashLog)
+                            .setPositiveButton("OK", null)
+                            .show();
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     private ImageView btnCenterPlay;

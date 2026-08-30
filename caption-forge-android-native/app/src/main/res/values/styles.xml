@@ -8,14 +8,5 @@
         <item name="android:navigationBarColor">@color/bg_dark</item>
         <item name="android:windowBackground">@color/bg_dark</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.MaterialComponents.MaterialAlertDialog</item>
-        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.CaptionForge.BottomSheetDialog</item>
-    </style>
-
-    <style name="ThemeOverlay.CaptionForge.BottomSheetDialog" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
-        <item name="bottomSheetStyle">@style/Widget.CaptionForge.BottomSheet</item>
-    </style>
-
-    <style name="Widget.CaptionForge.BottomSheet" parent="Widget.MaterialComponents.BottomSheet">
-        <item name="android:background">@android:color/transparent</item>
     </style>
 </resources>
