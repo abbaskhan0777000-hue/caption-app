@@ -148,36 +148,46 @@ public class StylesBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
+    @Override
+    public int getTheme() {
+        return com.google.android.material.R.style.Theme_MaterialComponents_DayNight_BottomSheetDialog;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.bottom_sheet_styles, container, false);
+        try {
+            View v = inflater.inflate(R.layout.bottom_sheet_styles, container, false);
 
-        initViews(v);
-        setupTabs(v);
-        setupFontPicker(v);
-        setupSteppers(v);
-        setupFormatButtons();
-        setupAlignmentButtons();
-        setupVerticalAlignmentButtons();
-        setupColorPickers();
-        setupEffectsSwitches();
+            initViews(v);
+            setupTabs(v);
+            setupFontPicker(v);
+            setupSteppers(v);
+            setupFormatButtons();
+            setupAlignmentButtons();
+            setupVerticalAlignmentButtons();
+            setupColorPickers();
+            setupEffectsSwitches();
 
-        View btnCancel = v.findViewById(R.id.btnCancelStyles);
-        if (btnCancel != null) btnCancel.setOnClickListener(view -> dismiss());
+            View btnCancel = v.findViewById(R.id.btnCancelStyles);
+            if (btnCancel != null) btnCancel.setOnClickListener(view -> dismiss());
 
-        View btnApply = v.findViewById(R.id.btnApplyStyles);
-        if (btnApply != null) {
-            btnApply.setOnClickListener(view -> {
-                if (applyListener != null) {
-                    applyListener.onApply(workingStyle);
-                }
-                dismiss();
-            });
+            View btnApply = v.findViewById(R.id.btnApplyStyles);
+            if (btnApply != null) {
+                btnApply.setOnClickListener(view -> {
+                    if (applyListener != null) {
+                        applyListener.onApply(workingStyle);
+                    }
+                    dismiss();
+                });
+            }
+
+            updatePreview();
+            return v;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new View(requireContext());
         }
-
-        updatePreview();
-        return v;
     }
 
     private void initViews(View v) {

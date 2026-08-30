@@ -38,30 +38,40 @@ public class TemplatesBottomSheet extends BottomSheetDialogFragment {
         return sheet;
     }
 
+    @Override
+    public int getTheme() {
+        return com.google.android.material.R.style.Theme_MaterialComponents_DayNight_BottomSheetDialog;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.bottom_sheet_templates, container, false);
+        try {
+            View view = inflater.inflate(R.layout.bottom_sheet_templates, container, false);
 
-        initViews(view);
-        setupRecyclerView(view);
-        setupCategoryChips();
+            initViews(view);
+            setupRecyclerView(view);
+            setupCategoryChips();
 
-        View btnCancel = view.findViewById(R.id.btnCancelTemplates);
-        if (btnCancel != null) btnCancel.setOnClickListener(v -> dismiss());
+            View btnCancel = view.findViewById(R.id.btnCancelTemplates);
+            if (btnCancel != null) btnCancel.setOnClickListener(v -> dismiss());
 
-        View btnApply = view.findViewById(R.id.btnApplyTemplates);
-        if (btnApply != null) {
-            btnApply.setOnClickListener(v -> {
-                CaptionStyle toApply = (selectedStyle != null) ? selectedStyle : (adapter != null ? adapter.getSelectedStyle() : null);
-                if (applyListener != null && toApply != null) {
-                    applyListener.onApply(toApply);
-                }
-                dismiss();
-            });
+            View btnApply = view.findViewById(R.id.btnApplyTemplates);
+            if (btnApply != null) {
+                btnApply.setOnClickListener(v -> {
+                    CaptionStyle toApply = (selectedStyle != null) ? selectedStyle : (adapter != null ? adapter.getSelectedStyle() : null);
+                    if (applyListener != null && toApply != null) {
+                        applyListener.onApply(toApply);
+                    }
+                    dismiss();
+                });
+            }
+
+            return view;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new View(requireContext());
         }
-
-        return view;
     }
 
     private void initViews(View view) {
