@@ -56,15 +56,40 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         filterByCategory("Legacy");
     }
 
+    private static CharSequence makeSpan(String fullText, String highlightWord, int highlightColor, int normalColor, Integer bgColor, boolean isBold, boolean isItalic) {
+        SpannableString ss = new SpannableString(fullText);
+        int len = fullText.length();
+        if (bgColor != null) {
+            ss.setSpan(new BackgroundColorSpan(bgColor), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        if (highlightWord != null && fullText.contains(highlightWord)) {
+            int start = fullText.indexOf(highlightWord);
+            int end = Math.min(start + highlightWord.length(), len);
+            if (start > 0) {
+                ss.setSpan(new ForegroundColorSpan(normalColor), 0, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            ss.setSpan(new ForegroundColorSpan(highlightColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (end < len) {
+                ss.setSpan(new ForegroundColorSpan(normalColor), end, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        } else {
+            ss.setSpan(new ForegroundColorSpan(highlightColor != 0 ? highlightColor : normalColor), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        if (isBold && isItalic) {
+            ss.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        } else if (isBold) {
+            ss.setSpan(new StyleSpan(Typeface.BOLD), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        } else if (isItalic) {
+            ss.setSpan(new StyleSpan(Typeface.ITALIC), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        return ss;
+    }
+
     private void initAllTemplates() {
         // ==========================================
         // 1. LEGACY (Classic Subtitle Styles)
         // ==========================================
         // 1.1 Classic Karaoke
-        SpannableString leg1 = new SpannableString("ELEVATE YOUR WORDS");
-        leg1.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg1.setSpan(new ForegroundColorSpan(Color.WHITE), 8, 18, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg1.setSpan(new StyleSpan(Typeface.BOLD), 0, 18, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sLeg1 = new CaptionStyle();
         sLeg1.presetId = "leg_karaoke";
         sLeg1.presetName = "Classic Karaoke";
@@ -75,13 +100,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg1.strokeColor = Color.BLACK;
         sLeg1.strokeWidth = 10f;
         sLeg1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("leg_karaoke", "Legacy", "CLASSIC KARAOKE", leg1, sLeg1));
+        allItems.add(new TemplateItem("leg_karaoke", "Legacy", "CLASSIC KARAOKE",
+                makeSpan("ELEVATE YOUR WORDS", "ELEVATE", Color.parseColor("#FACC15"), Color.WHITE, null, true, false), sLeg1));
 
         // 1.2 Navy White Pill
-        SpannableString leg2 = new SpannableString("SMART CONTENT CREATION");
-        leg2.setSpan(new BackgroundColorSpan(Color.WHITE), 0, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg2.setSpan(new ForegroundColorSpan(Color.BLACK), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg2.setSpan(new ForegroundColorSpan(Color.parseColor("#1E3A8A")), 6, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sLeg2 = new CaptionStyle();
         sLeg2.presetId = "leg_navy_pill";
         sLeg2.presetName = "Navy White Pill";
@@ -89,13 +111,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg2.highlightColor = Color.BLACK;
         sLeg2.textColor = Color.parseColor("#1E3A8A");
         sLeg2.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("leg_navy_pill", "Legacy", "NAVY WHITE PILL", leg2, sLeg2));
+        allItems.add(new TemplateItem("leg_navy_pill", "Legacy", "NAVY WHITE PILL",
+                makeSpan("SMART CONTENT CREATION", "SMART", Color.BLACK, Color.parseColor("#1E3A8A"), Color.WHITE, false, false), sLeg2));
 
         // 1.3 Yellow Highlight Box
-        SpannableString leg3 = new SpannableString("HIGHLIGHT KEY PHRASES");
-        leg3.setSpan(new BackgroundColorSpan(Color.BLACK), 0, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg3.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg3.setSpan(new ForegroundColorSpan(Color.WHITE), 10, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sLeg3 = new CaptionStyle();
         sLeg3.presetId = "leg_yellow_box";
         sLeg3.presetName = "Yellow Highlight Box";
@@ -103,11 +122,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg3.highlightColor = Color.parseColor("#FACC15");
         sLeg3.textColor = Color.WHITE;
         sLeg3.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("leg_yellow_box", "Legacy", "YELLOW HIGHLIGHT BOX", leg3, sLeg3));
+        allItems.add(new TemplateItem("leg_yellow_box", "Legacy", "YELLOW HIGHLIGHT BOX",
+                makeSpan("HIGHLIGHT KEY PHRASES", "HIGHLIGHT", Color.parseColor("#FACC15"), Color.WHITE, Color.BLACK, false, false), sLeg3));
 
         // 1.4 Clean Minimal White
-        SpannableString leg4 = new SpannableString("Simple clear storytelling");
-        leg4.setSpan(new ForegroundColorSpan(Color.WHITE), 0, 25, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sLeg4 = new CaptionStyle();
         sLeg4.presetId = "leg_clean_white";
         sLeg4.presetName = "Clean Minimal White";
@@ -118,13 +136,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg4.hasShadow = true;
         sLeg4.shadowColor = Color.parseColor("#99000000");
         sLeg4.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("leg_clean_white", "Legacy", "CLEAN MINIMAL WHITE", leg4, sLeg4));
+        allItems.add(new TemplateItem("leg_clean_white", "Legacy", "CLEAN MINIMAL WHITE",
+                makeSpan("Simple clear storytelling", null, Color.WHITE, Color.WHITE, null, false, false), sLeg4));
 
         // 1.5 Royal Blue Pill
-        SpannableString leg5 = new SpannableString("EXPRESS WITH CONFIDENCE");
-        leg5.setSpan(new BackgroundColorSpan(Color.WHITE), 0, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg5.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg5.setSpan(new ForegroundColorSpan(Color.parseColor("#2563EB")), 8, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sLeg5 = new CaptionStyle();
         sLeg5.presetId = "leg_royal_pill";
         sLeg5.presetName = "Royal Blue Pill";
@@ -132,13 +147,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg5.highlightColor = Color.parseColor("#FACC15");
         sLeg5.textColor = Color.parseColor("#2563EB");
         sLeg5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("leg_royal_pill", "Legacy", "ROYAL BLUE PILL", leg5, sLeg5));
+        allItems.add(new TemplateItem("leg_royal_pill", "Legacy", "ROYAL BLUE PILL",
+                makeSpan("EXPRESS WITH CONFIDENCE", "EXPRESS", Color.parseColor("#FACC15"), Color.parseColor("#2563EB"), Color.WHITE, false, false), sLeg5));
 
         // 1.6 Dark Obsidian Pill
-        SpannableString leg6 = new SpannableString("THE SECRETS OF SUCCESS");
-        leg6.setSpan(new BackgroundColorSpan(Color.BLACK), 0, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg6.setSpan(new ForegroundColorSpan(Color.parseColor("#FDE047")), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        leg6.setSpan(new ForegroundColorSpan(Color.WHITE), 4, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sLeg6 = new CaptionStyle();
         sLeg6.presetId = "leg_obsidian_pill";
         sLeg6.presetName = "Dark Obsidian Pill";
@@ -146,15 +158,13 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg6.highlightColor = Color.parseColor("#FDE047");
         sLeg6.textColor = Color.WHITE;
         sLeg6.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("leg_obsidian_pill", "Legacy", "DARK OBSIDIAN PILL", leg6, sLeg6));
+        allItems.add(new TemplateItem("leg_obsidian_pill", "Legacy", "DARK OBSIDIAN PILL",
+                makeSpan("THE SECRETS OF SUCCESS", "THE", Color.parseColor("#FDE047"), Color.WHITE, Color.BLACK, false, false), sLeg6));
 
         // ==========================================
         // 2. MODERN (Sleek, Clean & Aesthetic)
         // ==========================================
         // 2.1 Ali Abdaal Aesthetic
-        SpannableString mod1 = new SpannableString("Aesthetic productivity habits");
-        mod1.setSpan(new ForegroundColorSpan(Color.parseColor("#FEF3C7")), 0, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod1.setSpan(new ForegroundColorSpan(Color.parseColor("#F8FAFC")), 10, 29, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMod1 = new CaptionStyle();
         sMod1.presetId = "mod_abdaal";
         sMod1.presetName = "Ali Abdaal Aesthetic";
@@ -165,12 +175,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod1.hasShadow = true;
         sMod1.shadowColor = Color.parseColor("#80000000");
         sMod1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("mod_abdaal", "Modern", "ALI ABDAAL AESTHETIC", mod1, sMod1));
+        allItems.add(new TemplateItem("mod_abdaal", "Modern", "ALI ABDAAL AESTHETIC",
+                makeSpan("Aesthetic productivity habits", "Aesthetic", Color.parseColor("#FEF3C7"), Color.parseColor("#F8FAFC"), null, false, false), sMod1));
 
         // 2.2 Electric Cyan Clean
-        SpannableString mod2 = new SpannableString("THE FUTURE OF AI");
-        mod2.setSpan(new ForegroundColorSpan(Color.parseColor("#38BDF8")), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod2.setSpan(new ForegroundColorSpan(Color.WHITE), 4, 16, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMod2 = new CaptionStyle();
         sMod2.presetId = "mod_cyan_clean";
         sMod2.presetName = "Electric Cyan Clean";
@@ -179,13 +187,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod2.textColor = Color.WHITE;
         sMod2.hasShadow = true;
         sMod2.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("mod_cyan_clean", "Modern", "ELECTRIC CYAN CLEAN", mod2, sMod2));
+        allItems.add(new TemplateItem("mod_cyan_clean", "Modern", "ELECTRIC CYAN CLEAN",
+                makeSpan("THE FUTURE OF AI", "THE", Color.parseColor("#38BDF8"), Color.WHITE, null, false, false), sMod2));
 
         // 2.3 Velvet Violet
-        SpannableString mod3 = new SpannableString("PREMIUM STUDIO QUALITY");
-        mod3.setSpan(new BackgroundColorSpan(Color.parseColor("#7C3AED")), 0, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod3.setSpan(new ForegroundColorSpan(Color.parseColor("#FBBF24")), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod3.setSpan(new ForegroundColorSpan(Color.WHITE), 8, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMod3 = new CaptionStyle();
         sMod3.presetId = "mod_velvet_violet";
         sMod3.presetName = "Velvet Violet";
@@ -193,12 +198,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod3.highlightColor = Color.parseColor("#FBBF24");
         sMod3.textColor = Color.WHITE;
         sMod3.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("mod_velvet_violet", "Modern", "VELVET VIOLET", mod3, sMod3));
+        allItems.add(new TemplateItem("mod_velvet_violet", "Modern", "VELVET VIOLET",
+                makeSpan("PREMIUM STUDIO QUALITY", "PREMIUM", Color.parseColor("#FBBF24"), Color.WHITE, Color.parseColor("#7C3AED"), false, false), sMod3));
 
         // 2.4 Emerald Growth
-        SpannableString mod4 = new SpannableString("SCALING TO ONE MILLION");
-        mod4.setSpan(new ForegroundColorSpan(Color.parseColor("#10B981")), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod4.setSpan(new ForegroundColorSpan(Color.WHITE), 8, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMod4 = new CaptionStyle();
         sMod4.presetId = "mod_emerald_growth";
         sMod4.presetName = "Emerald Growth";
@@ -209,13 +212,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod4.strokeColor = Color.parseColor("#064E3B");
         sMod4.strokeWidth = 8f;
         sMod4.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("mod_emerald_growth", "Modern", "EMERALD GROWTH", mod4, sMod4));
+        allItems.add(new TemplateItem("mod_emerald_growth", "Modern", "EMERALD GROWTH",
+                makeSpan("SCALING TO ONE MILLION", "SCALING", Color.parseColor("#10B981"), Color.WHITE, null, false, false), sMod4));
 
         // 2.5 Sunset Fade Italic
-        SpannableString mod5 = new SpannableString("Unstoppable daily momentum");
-        mod5.setSpan(new ForegroundColorSpan(Color.parseColor("#FB923C")), 0, 11, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod5.setSpan(new ForegroundColorSpan(Color.WHITE), 12, 26, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod5.setSpan(new StyleSpan(Typeface.ITALIC), 0, 26, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMod5 = new CaptionStyle();
         sMod5.presetId = "mod_sunset_fade";
         sMod5.presetName = "Sunset Fade Italic";
@@ -224,13 +224,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod5.textColor = Color.WHITE;
         sMod5.hasShadow = true;
         sMod5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("mod_sunset_fade", "Modern", "SUNSET FADE ITALIC", mod5, sMod5));
+        allItems.add(new TemplateItem("mod_sunset_fade", "Modern", "SUNSET FADE ITALIC",
+                makeSpan("Unstoppable daily momentum", "Unstoppable", Color.parseColor("#FB923C"), Color.WHITE, null, false, true), sMod5));
 
         // 2.6 Glassmorphism Cyan
-        SpannableString mod6 = new SpannableString("TRANSPARENT GLASS UI");
-        mod6.setSpan(new BackgroundColorSpan(Color.parseColor("#66000000")), 0, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod6.setSpan(new ForegroundColorSpan(Color.parseColor("#22D3EE")), 0, 11, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mod6.setSpan(new ForegroundColorSpan(Color.WHITE), 12, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMod6 = new CaptionStyle();
         sMod6.presetId = "mod_glass_cyan";
         sMod6.presetName = "Glassmorphism Cyan";
@@ -238,15 +235,13 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod6.highlightColor = Color.parseColor("#22D3EE");
         sMod6.textColor = Color.WHITE;
         sMod6.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("mod_glass_cyan", "Modern", "GLASSMORPHISM CYAN", mod6, sMod6));
+        allItems.add(new TemplateItem("mod_glass_cyan", "Modern", "GLASSMORPHISM CYAN",
+                makeSpan("TRANSPARENT GLASS UI", "TRANSPARENT", Color.parseColor("#22D3EE"), Color.WHITE, Color.parseColor("#66000000"), false, false), sMod6));
 
         // ==========================================
         // 3. VIRAL (TikTok & Reels High-Retention)
         // ==========================================
         // 3.1 Hormozi Fire
-        SpannableString vir1 = new SpannableString("MAKE $100K PER MONTH");
-        vir1.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir1.setSpan(new ForegroundColorSpan(Color.parseColor("#EF4444")), 5, 20, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sVir1 = new CaptionStyle();
         sVir1.presetId = "vir_hormozi";
         sVir1.presetName = "Hormozi Fire";
@@ -257,12 +252,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir1.strokeColor = Color.BLACK;
         sVir1.strokeWidth = 14f;
         sVir1.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("vir_hormozi", "Viral", "HORMOZI FIRE", vir1, sVir1));
+        allItems.add(new TemplateItem("vir_hormozi", "Viral", "HORMOZI FIRE",
+                makeSpan("MAKE $100K PER MONTH", "MAKE", Color.parseColor("#FACC15"), Color.parseColor("#EF4444"), null, false, false), sVir1));
 
         // 3.2 MrBeast Impact
-        SpannableString vir2 = new SpannableString("SURVIVED 100 DAYS HERE!");
-        vir2.setSpan(new ForegroundColorSpan(Color.parseColor("#22C55E")), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir2.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 9, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sVir2 = new CaptionStyle();
         sVir2.presetId = "vir_mrbeast";
         sVir2.presetName = "MrBeast Impact";
@@ -273,12 +266,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir2.strokeColor = Color.BLACK;
         sVir2.strokeWidth = 14f;
         sVir2.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("vir_mrbeast", "Viral", "MR BEAST IMPACT", vir2, sVir2));
+        allItems.add(new TemplateItem("vir_mrbeast", "Viral", "MR BEAST IMPACT",
+                makeSpan("SURVIVED 100 DAYS HERE!", "SURVIVED", Color.parseColor("#22C55E"), Color.parseColor("#FACC15"), null, false, false), sVir2));
 
         // 3.3 TikTok 1-Word Punch
-        SpannableString vir3 = new SpannableString("BOOM!");
-        vir3.setSpan(new BackgroundColorSpan(Color.parseColor("#EF4444")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir3.setSpan(new ForegroundColorSpan(Color.WHITE), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sVir3 = new CaptionStyle();
         sVir3.presetId = "vir_1word_punch";
         sVir3.presetName = "TikTok 1-Word Punch";
@@ -289,12 +280,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir3.textColor = Color.WHITE;
         sVir3.wordsPerChunk = 1;
         sVir3.singleLine = true;
-        allItems.add(new TemplateItem("vir_1word_punch", "Viral", "TIKTOK 1-WORD PUNCH", vir3, sVir3));
+        allItems.add(new TemplateItem("vir_1word_punch", "Viral", "TIKTOK 1-WORD PUNCH",
+                makeSpan("BOOM!", "BOOM!", Color.WHITE, Color.WHITE, Color.parseColor("#EF4444"), false, false), sVir3));
 
         // 3.4 Bebas Condensed Hook
-        SpannableString vir4 = new SpannableString("HOW TO GO VIRAL FAST");
-        vir4.setSpan(new ForegroundColorSpan(Color.parseColor("#00F2FE")), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir4.setSpan(new ForegroundColorSpan(Color.WHITE), 4, 20, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sVir4 = new CaptionStyle();
         sVir4.presetId = "vir_bebas_hook";
         sVir4.presetName = "Bebas Condensed Hook";
@@ -305,13 +294,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir4.strokeColor = Color.parseColor("#0F172A");
         sVir4.strokeWidth = 10f;
         sVir4.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("vir_bebas_hook", "Viral", "BEBAS CONDENSED HOOK", vir4, sVir4));
+        allItems.add(new TemplateItem("vir_bebas_hook", "Viral", "BEBAS CONDENSED HOOK",
+                makeSpan("HOW TO GO VIRAL FAST", "HOW", Color.parseColor("#00F2FE"), Color.WHITE, null, false, false), sVir4));
 
         // 3.5 Purple Beast Pill
-        SpannableString vir5 = new SpannableString("UNLOCK YOUR SUPERPOWER");
-        vir5.setSpan(new BackgroundColorSpan(Color.parseColor("#8B5CF6")), 0, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir5.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 6, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir5.setSpan(new ForegroundColorSpan(Color.WHITE), 7, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sVir5 = new CaptionStyle();
         sVir5.presetId = "vir_purple_beast";
         sVir5.presetName = "Purple Beast Pill";
@@ -319,12 +305,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir5.highlightColor = Color.parseColor("#FACC15");
         sVir5.textColor = Color.WHITE;
         sVir5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("vir_purple_beast", "Viral", "PURPLE BEAST PILL", vir5, sVir5));
+        allItems.add(new TemplateItem("vir_purple_beast", "Viral", "PURPLE BEAST PILL",
+                makeSpan("UNLOCK YOUR SUPERPOWER", "UNLOCK", Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#8B5CF6"), false, false), sVir5));
 
         // 3.6 GaryVee Hustle
-        SpannableString vir6 = new SpannableString("STOP OVERTHINKING NOW");
-        vir6.setSpan(new ForegroundColorSpan(Color.parseColor("#A3E635")), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        vir6.setSpan(new ForegroundColorSpan(Color.WHITE), 5, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sVir6 = new CaptionStyle();
         sVir6.presetId = "vir_garyvee";
         sVir6.presetName = "GaryVee Hustle";
@@ -335,15 +319,13 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir6.strokeColor = Color.BLACK;
         sVir6.strokeWidth = 12f;
         sVir6.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("vir_garyvee", "Viral", "GARYVEE HUSTLE", vir6, sVir6));
+        allItems.add(new TemplateItem("vir_garyvee", "Viral", "GARYVEE HUSTLE",
+                makeSpan("STOP OVERTHINKING NOW", "STOP", Color.parseColor("#A3E635"), Color.WHITE, null, false, false), sVir6));
 
         // ==========================================
         // 4. BOLD (Heavy & High-Energy)
         // ==========================================
         // 4.1 Red Alert Strike
-        SpannableString bld1 = new SpannableString("DON'T MAKE THIS MISTAKE");
-        bld1.setSpan(new ForegroundColorSpan(Color.parseColor("#DC2626")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        bld1.setSpan(new ForegroundColorSpan(Color.WHITE), 6, 23, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sBld1 = new CaptionStyle();
         sBld1.presetId = "bld_red_alert";
         sBld1.presetName = "Red Alert Strike";
@@ -354,12 +336,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld1.strokeColor = Color.BLACK;
         sBld1.strokeWidth = 14f;
         sBld1.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("bld_red_alert", "Bold", "RED ALERT STRIKE", bld1, sBld1));
+        allItems.add(new TemplateItem("bld_red_alert", "Bold", "RED ALERT STRIKE",
+                makeSpan("DON'T MAKE THIS MISTAKE", "DON'T", Color.parseColor("#DC2626"), Color.WHITE, null, false, false), sBld1));
 
         // 4.2 Cinematic Gold
-        SpannableString bld2 = new SpannableString("BUILD LASTING WEALTH");
-        bld2.setSpan(new ForegroundColorSpan(Color.parseColor("#EAB308")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        bld2.setSpan(new ForegroundColorSpan(Color.parseColor("#FEF08A")), 6, 20, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sBld2 = new CaptionStyle();
         sBld2.presetId = "bld_gold_rush";
         sBld2.presetName = "Cinematic Gold";
@@ -372,12 +352,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld2.hasShadow = true;
         sBld2.shadowColor = Color.BLACK;
         sBld2.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("bld_gold_rush", "Bold", "CINEMATIC GOLD", bld2, sBld2));
+        allItems.add(new TemplateItem("bld_gold_rush", "Bold", "CINEMATIC GOLD",
+                makeSpan("BUILD LASTING WEALTH", "BUILD", Color.parseColor("#EAB308"), Color.parseColor("#FEF08A"), null, false, false), sBld2));
 
         // 4.3 Cyberpunk 2077
-        SpannableString bld3 = new SpannableString("HACK THE MATRIX TODAY");
-        bld3.setSpan(new ForegroundColorSpan(Color.parseColor("#EC4899")), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        bld3.setSpan(new ForegroundColorSpan(Color.parseColor("#06B6D4")), 5, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sBld3 = new CaptionStyle();
         sBld3.presetId = "bld_cyberpunk";
         sBld3.presetName = "Cyberpunk 2077";
@@ -388,12 +366,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld3.strokeColor = Color.BLACK;
         sBld3.strokeWidth = 12f;
         sBld3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("bld_cyberpunk", "Bold", "CYBERPUNK 2077", bld3, sBld3));
+        allItems.add(new TemplateItem("bld_cyberpunk", "Bold", "CYBERPUNK 2077",
+                makeSpan("HACK THE MATRIX TODAY", "HACK", Color.parseColor("#EC4899"), Color.parseColor("#06B6D4"), null, false, false), sBld3));
 
         // 4.4 Heavyweight Boxer
-        SpannableString bld4 = new SpannableString("NEVER EVER GIVE UP");
-        bld4.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        bld4.setSpan(new ForegroundColorSpan(Color.WHITE), 6, 18, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sBld4 = new CaptionStyle();
         sBld4.presetId = "bld_heavyweight";
         sBld4.presetName = "Heavyweight Boxer";
@@ -405,12 +381,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld4.strokeColor = Color.BLACK;
         sBld4.strokeWidth = 14f;
         sBld4.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("bld_heavyweight", "Bold", "HEAVYWEIGHT BOXER", bld4, sBld4));
+        allItems.add(new TemplateItem("bld_heavyweight", "Bold", "HEAVYWEIGHT BOXER",
+                makeSpan("NEVER EVER GIVE UP", "NEVER", Color.parseColor("#FACC15"), Color.WHITE, null, false, false), sBld4));
 
         // 4.5 Electric Voltage
-        SpannableString bld5 = new SpannableString("MAXIMUM ENERGY OUTPUT");
-        bld5.setSpan(new ForegroundColorSpan(Color.parseColor("#EAB308")), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        bld5.setSpan(new ForegroundColorSpan(Color.parseColor("#A855F7")), 8, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sBld5 = new CaptionStyle();
         sBld5.presetId = "bld_voltage";
         sBld5.presetName = "Electric Voltage";
@@ -421,15 +395,13 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld5.strokeColor = Color.BLACK;
         sBld5.strokeWidth = 10f;
         sBld5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("bld_voltage", "Bold", "ELECTRIC VOLTAGE", bld5, sBld5));
+        allItems.add(new TemplateItem("bld_voltage", "Bold", "ELECTRIC VOLTAGE",
+                makeSpan("MAXIMUM ENERGY OUTPUT", "MAXIMUM", Color.parseColor("#EAB308"), Color.parseColor("#A855F7"), null, false, false), sBld5));
 
         // ==========================================
         // 5. MINIMAL (Subtle & Sophisticated)
         // ==========================================
         // 5.1 Minimalist Whisper
-        SpannableString min1 = new SpannableString("The art of quiet focus");
-        min1.setSpan(new ForegroundColorSpan(Color.parseColor("#FEF08A")), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min1.setSpan(new ForegroundColorSpan(Color.WHITE), 4, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMin1 = new CaptionStyle();
         sMin1.presetId = "min_whisper";
         sMin1.presetName = "Minimalist Whisper";
@@ -440,13 +412,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin1.hasShadow = true;
         sMin1.shadowColor = Color.parseColor("#66000000");
         sMin1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("min_whisper", "Minimal", "MINIMALIST WHISPER", min1, sMin1));
+        allItems.add(new TemplateItem("min_whisper", "Minimal", "MINIMALIST WHISPER",
+                makeSpan("The art of quiet focus", "The", Color.parseColor("#FEF08A"), Color.WHITE, null, false, false), sMin1));
 
         // 5.2 Lavender Breeze
-        SpannableString min2 = new SpannableString("CREATE MEANINGFUL WORK");
-        min2.setSpan(new BackgroundColorSpan(Color.parseColor("#DDD6FE")), 0, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min2.setSpan(new ForegroundColorSpan(Color.parseColor("#1E1B4B")), 0, 6, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min2.setSpan(new ForegroundColorSpan(Color.parseColor("#4338CA")), 7, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMin2 = new CaptionStyle();
         sMin2.presetId = "min_lavender";
         sMin2.presetName = "Lavender Breeze";
@@ -454,12 +423,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin2.highlightColor = Color.parseColor("#1E1B4B");
         sMin2.textColor = Color.parseColor("#4338CA");
         sMin2.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("min_lavender", "Minimal", "LAVENDER BREEZE", min2, sMin2));
+        allItems.add(new TemplateItem("min_lavender", "Minimal", "LAVENDER BREEZE",
+                makeSpan("CREATE MEANINGFUL WORK", "CREATE", Color.parseColor("#1E1B4B"), Color.parseColor("#4338CA"), Color.parseColor("#DDD6FE"), false, false), sMin2));
 
         // 5.3 Nordic Ice
-        SpannableString min3 = new SpannableString("Simplicity in every detail");
-        min3.setSpan(new ForegroundColorSpan(Color.parseColor("#93C5FD")), 0, 10, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min3.setSpan(new ForegroundColorSpan(Color.WHITE), 11, 26, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMin3 = new CaptionStyle();
         sMin3.presetId = "min_nordic_ice";
         sMin3.presetName = "Nordic Ice";
@@ -467,13 +434,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin3.textColor = Color.WHITE;
         sMin3.hasOutline = false;
         sMin3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("min_nordic_ice", "Minimal", "NORDIC ICE", min3, sMin3));
+        allItems.add(new TemplateItem("min_nordic_ice", "Minimal", "NORDIC ICE",
+                makeSpan("Simplicity in every detail", "Simplicity", Color.parseColor("#93C5FD"), Color.WHITE, null, false, false), sMin3));
 
         // 5.4 Subtle Black Pill
-        SpannableString min4 = new SpannableString("Daily mindful journaling");
-        min4.setSpan(new BackgroundColorSpan(Color.BLACK), 0, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min4.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min4.setSpan(new ForegroundColorSpan(Color.WHITE), 6, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMin4 = new CaptionStyle();
         sMin4.presetId = "min_black_pill";
         sMin4.presetName = "Subtle Black Pill";
@@ -481,12 +445,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin4.highlightColor = Color.parseColor("#FACC15");
         sMin4.textColor = Color.WHITE;
         sMin4.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("min_black_pill", "Minimal", "SUBTLE BLACK PILL", min4, sMin4));
+        allItems.add(new TemplateItem("min_black_pill", "Minimal", "SUBTLE BLACK PILL",
+                makeSpan("Daily mindful journaling", "Daily", Color.parseColor("#FACC15"), Color.WHITE, Color.BLACK, false, false), sMin4));
 
         // 5.5 Monochrome Studio
-        SpannableString min5 = new SpannableString("BLACK AND WHITE FOCUS");
-        min5.setSpan(new ForegroundColorSpan(Color.WHITE), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        min5.setSpan(new ForegroundColorSpan(Color.parseColor("#94A3B8")), 6, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sMin5 = new CaptionStyle();
         sMin5.presetId = "min_monochrome";
         sMin5.presetName = "Monochrome Studio";
@@ -494,15 +456,13 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin5.textColor = Color.parseColor("#94A3B8");
         sMin5.hasOutline = false;
         sMin5.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("min_monochrome", "Minimal", "MONOCHROME STUDIO", min5, sMin5));
+        allItems.add(new TemplateItem("min_monochrome", "Minimal", "MONOCHROME STUDIO",
+                makeSpan("BLACK AND WHITE FOCUS", "BLACK", Color.WHITE, Color.parseColor("#94A3B8"), null, false, false), sMin5));
 
         // ==========================================
         // 6. COOL (Neon, Pop & Synthwave)
         // ==========================================
         // 6.1 Neon Tokyo
-        SpannableString cl1 = new SpannableString("NEON LIGHTS IN SHIBUYA");
-        cl1.setSpan(new ForegroundColorSpan(Color.parseColor("#F43F5E")), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl1.setSpan(new ForegroundColorSpan(Color.parseColor("#06B6D4")), 5, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sCl1 = new CaptionStyle();
         sCl1.presetId = "cl_neon_tokyo";
         sCl1.presetName = "Neon Tokyo";
@@ -515,13 +475,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl1.hasShadow = true;
         sCl1.shadowColor = Color.parseColor("#F43F5E");
         sCl1.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("cl_neon_tokyo", "Cool", "NEON TOKYO", cl1, sCl1));
+        allItems.add(new TemplateItem("cl_neon_tokyo", "Cool", "NEON TOKYO",
+                makeSpan("NEON LIGHTS IN SHIBUYA", "NEON", Color.parseColor("#F43F5E"), Color.parseColor("#06B6D4"), null, false, false), sCl1));
 
         // 6.2 Hot Pink Pop
-        SpannableString cl2 = new SpannableString("TRENDING ON SOCIAL MEDIA");
-        cl2.setSpan(new BackgroundColorSpan(Color.parseColor("#EC4899")), 0, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl2.setSpan(new ForegroundColorSpan(Color.BLACK), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl2.setSpan(new ForegroundColorSpan(Color.WHITE), 9, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sCl2 = new CaptionStyle();
         sCl2.presetId = "cl_pink_pop";
         sCl2.presetName = "Hot Pink Pop";
@@ -529,12 +486,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl2.highlightColor = Color.BLACK;
         sCl2.textColor = Color.WHITE;
         sCl2.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("cl_pink_pop", "Cool", "HOT PINK POP", cl2, sCl2));
+        allItems.add(new TemplateItem("cl_pink_pop", "Cool", "HOT PINK POP",
+                makeSpan("TRENDING ON SOCIAL MEDIA", "TRENDING", Color.BLACK, Color.WHITE, Color.parseColor("#EC4899"), false, false), sCl2));
 
         // 6.3 Ice & Fire
-        SpannableString cl3 = new SpannableString("FREEZING COLD VS HOT");
-        cl3.setSpan(new ForegroundColorSpan(Color.parseColor("#38BDF8")), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl3.setSpan(new ForegroundColorSpan(Color.parseColor("#FB923C")), 9, 20, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sCl3 = new CaptionStyle();
         sCl3.presetId = "cl_ice_fire";
         sCl3.presetName = "Ice & Fire";
@@ -545,13 +500,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl3.strokeColor = Color.BLACK;
         sCl3.strokeWidth = 10f;
         sCl3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("cl_ice_fire", "Cool", "ICE & FIRE", cl3, sCl3));
+        allItems.add(new TemplateItem("cl_ice_fire", "Cool", "ICE & FIRE",
+                makeSpan("FREEZING COLD VS HOT", "FREEZING", Color.parseColor("#38BDF8"), Color.parseColor("#FB923C"), null, false, false), sCl3));
 
         // 6.4 Retro 80s Synthwave
-        SpannableString cl4 = new SpannableString("SYNTHWAVE SUNSET VIBES");
-        cl4.setSpan(new ForegroundColorSpan(Color.parseColor("#FDE047")), 0, 9, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl4.setSpan(new ForegroundColorSpan(Color.parseColor("#E11D48")), 10, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl4.setSpan(new StyleSpan(Typeface.ITALIC), 0, 22, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sCl4 = new CaptionStyle();
         sCl4.presetId = "cl_synthwave";
         sCl4.presetName = "Retro 80s Synthwave";
@@ -561,13 +513,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl4.hasShadow = true;
         sCl4.shadowColor = Color.parseColor("#581C87");
         sCl4.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("cl_synthwave", "Cool", "RETRO 80S SYNTHWAVE", cl4, sCl4));
+        allItems.add(new TemplateItem("cl_synthwave", "Cool", "RETRO 80S SYNTHWAVE",
+                makeSpan("SYNTHWAVE SUNSET VIBES", "SYNTHWAVE", Color.parseColor("#FDE047"), Color.parseColor("#E11D48"), null, false, true), sCl4));
 
         // 6.5 Ocean Wave
-        SpannableString cl5 = new SpannableString("DEEP BLUE OCEAN FLOW");
-        cl5.setSpan(new BackgroundColorSpan(Color.parseColor("#1D4ED8")), 0, 20, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl5.setSpan(new ForegroundColorSpan(Color.parseColor("#67E8F9")), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl5.setSpan(new ForegroundColorSpan(Color.WHITE), 5, 20, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sCl5 = new CaptionStyle();
         sCl5.presetId = "cl_ocean_wave";
         sCl5.presetName = "Ocean Wave";
@@ -575,12 +524,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl5.highlightColor = Color.parseColor("#67E8F9");
         sCl5.textColor = Color.WHITE;
         sCl5.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("cl_ocean_wave", "Cool", "OCEAN WAVE", cl5, sCl5));
+        allItems.add(new TemplateItem("cl_ocean_wave", "Cool", "OCEAN WAVE",
+                makeSpan("DEEP BLUE OCEAN FLOW", "DEEP", Color.parseColor("#67E8F9"), Color.WHITE, Color.parseColor("#1D4ED8"), false, false), sCl5));
 
         // 6.6 Acid Lime Pop
-        SpannableString cl6 = new SpannableString("EXTREME VIRAL FORMULA");
-        cl6.setSpan(new ForegroundColorSpan(Color.parseColor("#84CC16")), 0, 7, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        cl6.setSpan(new ForegroundColorSpan(Color.parseColor("#EA580C")), 8, 21, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sCl6 = new CaptionStyle();
         sCl6.presetId = "cl_acid_lime";
         sCl6.presetName = "Acid Lime Pop";
@@ -591,15 +538,13 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl6.strokeColor = Color.BLACK;
         sCl6.strokeWidth = 10f;
         sCl6.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("cl_acid_lime", "Cool", "ACID LIME POP", cl6, sCl6));
+        allItems.add(new TemplateItem("cl_acid_lime", "Cool", "ACID LIME POP",
+                makeSpan("EXTREME VIRAL FORMULA", "EXTREME", Color.parseColor("#84CC16"), Color.parseColor("#EA580C"), null, false, false), sCl6));
 
         // ==========================================
         // 7. SPLIT VIEW (2-Line Multi-Structure)
         // ==========================================
         // 7.1 Dynamic Dual
-        SpannableString sp1 = new SpannableString("MASTER YOUR MIND\nCONQUER THE WORLD");
-        sp1.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 6, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        sp1.setSpan(new ForegroundColorSpan(Color.WHITE), 7, 34, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sSp1 = new CaptionStyle();
         sSp1.presetId = "sp_dynamic_dual";
         sSp1.presetName = "Dynamic Dual";
@@ -610,12 +555,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sSp1.strokeColor = Color.BLACK;
         sSp1.strokeWidth = 10f;
         sSp1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("sp_dynamic_dual", "Split view", "DYNAMIC DUAL 2-LINE", sp1, sSp1));
+        allItems.add(new TemplateItem("sp_dynamic_dual", "Split view", "DYNAMIC DUAL 2-LINE",
+                makeSpan("MASTER YOUR MIND\nCONQUER THE WORLD", "MASTER", Color.parseColor("#FACC15"), Color.WHITE, null, false, false), sSp1));
 
         // 7.2 Cyan Strike 2-Line
-        SpannableString sp2 = new SpannableString("START TODAY\nNOT TOMORROW");
-        sp2.setSpan(new ForegroundColorSpan(Color.parseColor("#38BDF8")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        sp2.setSpan(new ForegroundColorSpan(Color.parseColor("#EF4444")), 12, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sSp2 = new CaptionStyle();
         sSp2.presetId = "sp_cyan_strike";
         sSp2.presetName = "Cyan Strike 2-Line";
@@ -626,13 +569,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sSp2.strokeColor = Color.BLACK;
         sSp2.strokeWidth = 12f;
         sSp2.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("sp_cyan_strike", "Split view", "CYAN STRIKE 2-LINE", sp2, sSp2));
+        allItems.add(new TemplateItem("sp_cyan_strike", "Split view", "CYAN STRIKE 2-LINE",
+                makeSpan("START TODAY\nNOT TOMORROW", "START TODAY", Color.parseColor("#38BDF8"), Color.parseColor("#EF4444"), null, false, false), sSp2));
 
         // 7.3 Minimal Dark Box 2-Line
-        SpannableString sp3 = new SpannableString("Focus on what matters\nIgnore all the noise");
-        sp3.setSpan(new BackgroundColorSpan(Color.parseColor("#B3000000")), 0, 42, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        sp3.setSpan(new ForegroundColorSpan(Color.parseColor("#FACC15")), 0, 5, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        sp3.setSpan(new ForegroundColorSpan(Color.WHITE), 6, 42, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sSp3 = new CaptionStyle();
         sSp3.presetId = "sp_dark_box";
         sSp3.presetName = "Minimal Dark Box 2-Line";
@@ -640,12 +580,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sSp3.highlightColor = Color.parseColor("#FACC15");
         sSp3.textColor = Color.WHITE;
         sSp3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("sp_dark_box", "Split view", "MINIMAL DARK BOX 2-LINE", sp3, sSp3));
+        allItems.add(new TemplateItem("sp_dark_box", "Split view", "MINIMAL DARK BOX 2-LINE",
+                makeSpan("Focus on what matters\nIgnore all the noise", "Focus", Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#B3000000"), false, false), sSp3));
 
         // 7.4 Emerald Tech 2-Line
-        SpannableString sp4 = new SpannableString("INNOVATION IN TECH\nTHE NEXT DECADE");
-        sp4.setSpan(new ForegroundColorSpan(Color.parseColor("#10B981")), 0, 10, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        sp4.setSpan(new ForegroundColorSpan(Color.WHITE), 11, 33, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         CaptionStyle sSp4 = new CaptionStyle();
         sSp4.presetId = "sp_emerald_tech";
         sSp4.presetName = "Emerald Tech 2-Line";
@@ -655,7 +593,8 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sSp4.hasOutline = true;
         sSp4.strokeColor = Color.BLACK;
         sSp4.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("sp_emerald_tech", "Split view", "EMERALD TECH 2-LINE", sp4, sSp4));
+        allItems.add(new TemplateItem("sp_emerald_tech", "Split view", "EMERALD TECH 2-LINE",
+                makeSpan("INNOVATION IN TECH\nTHE NEXT DECADE", "INNOVATION", Color.parseColor("#10B981"), Color.WHITE, null, false, false), sSp4));
     }
 
     public CaptionStyle getSelectedStyle() {
