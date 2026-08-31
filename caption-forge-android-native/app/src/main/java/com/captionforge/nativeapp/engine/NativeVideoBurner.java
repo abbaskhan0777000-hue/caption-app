@@ -163,6 +163,10 @@ public class NativeVideoBurner {
                         AssGenerator.CaptionChunk chunk = chunks.get(cIdx);
                         if (chunk.words.isEmpty()) continue;
 
+                        // Next chunk start for natural pause bridging (held up to max 3.5s)
+                        double nextChunkStart = (cIdx < chunks.size() - 1) ? chunks.get(cIdx + 1).start : (chunk.end + 2.5);
+                        double chunkVisibleEnd = Math.min(nextChunkStart, chunk.end + 3.5);
+
                         if (!"clean".equalsIgnoreCase(style.animationPreset)) {
                             for (int wIdx = 0; wIdx < chunk.words.size(); wIdx++) {
                                 WordCaption activeWord = chunk.words.get(wIdx);
@@ -178,7 +182,7 @@ public class NativeVideoBurner {
                                 if (wIdx < chunk.words.size() - 1) {
                                     end = Math.max(start + 0.05, chunk.words.get(wIdx + 1).getStart());
                                 } else {
-                                    end = Math.max(start + 0.05, chunk.end);
+                                    end = Math.max(start + 0.05, chunkVisibleEnd);
                                 }
                                 frames.add(new OverlayFrame(imgFile, start, end));
                                 frameIndex++;
@@ -192,7 +196,7 @@ public class NativeVideoBurner {
                             bmp.recycle();
 
                             double start = Math.max(0, chunk.start);
-                            double end = Math.max(start + 0.05, chunk.end);
+                            double end = Math.max(start + 0.05, chunkVisibleEnd);
                             frames.add(new OverlayFrame(imgFile, start, end));
                             frameIndex++;
                         }

@@ -177,12 +177,17 @@ public class CaptionOverlayView extends View {
         int height = getHeight();
         if (width == 0 || height == 0) return;
 
-        // Find active caption chunk with exact millisecond precision
+        // Find active caption chunk with natural pause retention
         List<AssGenerator.CaptionChunk> chunks = AssGenerator.chunkWords(words, style.wordsPerChunk);
         AssGenerator.CaptionChunk activeChunk = null;
 
-        for (AssGenerator.CaptionChunk chunk : chunks) {
-            if (currentPlaybackTime >= chunk.start && currentPlaybackTime <= chunk.end + 0.05) {
+        for (int i = 0; i < chunks.size(); i++) {
+            AssGenerator.CaptionChunk chunk = chunks.get(i);
+            // Hold phrase during pause until next chunk starts (clamped to max 3.5s pause)
+            double nextChunkStart = (i < chunks.size() - 1) ? chunks.get(i + 1).start : (chunk.end + 2.5);
+            double chunkVisibleEnd = Math.min(nextChunkStart, chunk.end + 3.5);
+
+            if (currentPlaybackTime >= chunk.start && currentPlaybackTime < chunkVisibleEnd) {
                 activeChunk = chunk;
                 break;
             }
@@ -308,16 +313,19 @@ public class CaptionOverlayView extends View {
 
         float currentX = startX;
 
-        for (WordCaption w : activeChunk.words) {
+        for (int wIdx = 0; wIdx < activeChunk.words.size(); wIdx++) {
+            WordCaption w = activeChunk.words.get(wIdx);
             String wordText = w.getWord().toUpperCase();
             float wordWidth = textPaint.measureText(wordText);
 
-            boolean isActive = currentPlaybackTime >= w.getStart() && currentPlaybackTime <= w.getEnd();
+            // Natural word active detection: hold active state through intra-phrase pauses until next word speaks
+            double nextWordStart = (wIdx < activeChunk.words.size() - 1) ? activeChunk.words.get(wIdx + 1).getStart() : Double.MAX_VALUE;
+            boolean isActive = (currentPlaybackTime >= w.getStart() && currentPlaybackTime < nextWordStart);
             Paint currentFillPaint = isActive ? highlightPaint : textPaint;
 
             // Fade mode: subtle alpha on upcoming words, 100% on active
             if (isFade) {
-                currentFillPaint.setAlpha(isActive ? 255 : 150);
+                currentFillPaint.setAlpha(isActive ? 255 : 140);
             } else {
                 currentFillPaint.setAlpha(255);
             }
@@ -338,14 +346,16 @@ public class CaptionOverlayView extends View {
 
                 if (isPop) {
                     float scale;
-                    if (progress < 0.25) {
-                        scale = 1.0f + (float) (progress / 0.25) * 0.15f; // 1.0 -> 1.15
+                    if (progress < 0.20) {
+                        scale = 1.0f + (float) (progress / 0.20) * 0.20f; // 1.0 -> 1.20
+                    } else if (progress < 0.50) {
+                        scale = 1.20f - (float) ((progress - 0.20) / 0.30) * 0.08f; // 1.20 -> 1.12
                     } else {
-                        scale = 1.15f - (float) ((progress - 0.25) / 0.75) * 0.05f; // 1.15 -> 1.10
+                        scale = 1.12f;
                     }
                     canvas.scale(scale, scale, wordCenterX, wordCenterY);
                 } else if (isBounce) {
-                    float bounceY = (float) (Math.sin(progress * Math.PI) * (-4.5f * density));
+                    float bounceY = (float) (Math.sin(Math.min(1.0, progress * 1.5) * Math.PI) * (-6.0f * density));
                     canvas.translate(0, bounceY);
                 }
             }

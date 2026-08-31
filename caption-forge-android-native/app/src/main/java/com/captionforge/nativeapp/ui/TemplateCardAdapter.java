@@ -56,17 +56,20 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         filterByCategory("Legacy");
     }
 
-    private static CharSequence makeSpan(String fullText, String highlightWord, int highlightColor, int normalColor, Integer bgColor, boolean isBold, boolean isItalic) {
+    private static CharSequence makeSpan(String fullText, String highlightWord, int highlightColor, int normalColor, Integer phraseBgColor, Integer highlightBgColor, boolean isBold, boolean isItalic) {
         SpannableString ss = new SpannableString(fullText);
         int len = fullText.length();
-        if (bgColor != null) {
-            ss.setSpan(new BackgroundColorSpan(bgColor), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        if (phraseBgColor != null) {
+            ss.setSpan(new BackgroundColorSpan(phraseBgColor), 0, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         if (highlightWord != null && fullText.contains(highlightWord)) {
             int start = fullText.indexOf(highlightWord);
             int end = Math.min(start + highlightWord.length(), len);
             if (start > 0) {
                 ss.setSpan(new ForegroundColorSpan(normalColor), 0, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            if (highlightBgColor != null && highlightBgColor != 0) {
+                ss.setSpan(new BackgroundColorSpan(highlightBgColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             ss.setSpan(new ForegroundColorSpan(highlightColor), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             if (end < len) {
@@ -89,19 +92,20 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         // ==========================================
         // 1. LEGACY (Classic Subtitle Styles)
         // ==========================================
-        // 1.1 Classic Karaoke
+        // 1.1 Classic Karaoke Pop
         CaptionStyle sLeg1 = new CaptionStyle();
         sLeg1.presetId = "leg_karaoke";
-        sLeg1.presetName = "Classic Karaoke";
+        sLeg1.presetName = "Classic Karaoke Pop";
         sLeg1.fontFamily = "sans-serif-black";
         sLeg1.textColor = Color.WHITE;
         sLeg1.highlightColor = Color.parseColor("#FACC15");
         sLeg1.hasOutline = true;
         sLeg1.strokeColor = Color.BLACK;
         sLeg1.strokeWidth = 10f;
+        sLeg1.animationPreset = "pop";
         sLeg1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("leg_karaoke", "Legacy", "CLASSIC KARAOKE",
-                makeSpan("ELEVATE YOUR WORDS", "ELEVATE", Color.parseColor("#FACC15"), Color.WHITE, null, true, false), sLeg1));
+        allItems.add(new TemplateItem("leg_karaoke", "Legacy", "CLASSIC KARAOKE POP",
+                makeSpan("ELEVATE YOUR WORDS", "ELEVATE", Color.parseColor("#FACC15"), Color.WHITE, null, null, true, false), sLeg1));
 
         // 1.2 Navy White Pill
         CaptionStyle sLeg2 = new CaptionStyle();
@@ -110,34 +114,41 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg2.backgroundColor = Color.WHITE;
         sLeg2.highlightColor = Color.BLACK;
         sLeg2.textColor = Color.parseColor("#1E3A8A");
+        sLeg2.animationPreset = "bounce";
         sLeg2.wordsPerChunk = 3;
         allItems.add(new TemplateItem("leg_navy_pill", "Legacy", "NAVY WHITE PILL",
-                makeSpan("SMART CONTENT CREATION", "SMART", Color.BLACK, Color.parseColor("#1E3A8A"), Color.WHITE, false, false), sLeg2));
+                makeSpan("SMART CONTENT CREATION", "SMART", Color.BLACK, Color.parseColor("#1E3A8A"), Color.WHITE, null, false, false), sLeg2));
 
-        // 1.3 Yellow Highlight Box
+        // 1.3 Yellow Highlight Box (Active Word Background Box)
         CaptionStyle sLeg3 = new CaptionStyle();
         sLeg3.presetId = "leg_yellow_box";
         sLeg3.presetName = "Yellow Highlight Box";
-        sLeg3.highlightBgColor = Color.BLACK;
-        sLeg3.highlightColor = Color.parseColor("#FACC15");
+        sLeg3.fontFamily = "sans-serif-black";
+        sLeg3.highlightBgColor = Color.parseColor("#FACC15");
+        sLeg3.highlightColor = Color.BLACK;
         sLeg3.textColor = Color.WHITE;
+        sLeg3.hasOutline = true;
+        sLeg3.strokeColor = Color.BLACK;
+        sLeg3.strokeWidth = 8f;
+        sLeg3.animationPreset = "pop";
         sLeg3.wordsPerChunk = 3;
         allItems.add(new TemplateItem("leg_yellow_box", "Legacy", "YELLOW HIGHLIGHT BOX",
-                makeSpan("HIGHLIGHT KEY PHRASES", "HIGHLIGHT", Color.parseColor("#FACC15"), Color.WHITE, Color.BLACK, false, false), sLeg3));
+                makeSpan("HIGHLIGHT KEY PHRASES", "HIGHLIGHT", Color.BLACK, Color.WHITE, null, Color.parseColor("#FACC15"), true, false), sLeg3));
 
-        // 1.4 Clean Minimal White
+        // 1.4 Clean Minimal Fade
         CaptionStyle sLeg4 = new CaptionStyle();
         sLeg4.presetId = "leg_clean_white";
-        sLeg4.presetName = "Clean Minimal White";
+        sLeg4.presetName = "Clean Minimal Fade";
         sLeg4.fontFamily = "sans-serif";
         sLeg4.textColor = Color.WHITE;
-        sLeg4.highlightColor = Color.parseColor("#E2E8F0");
+        sLeg4.highlightColor = Color.parseColor("#38BDF8");
         sLeg4.hasOutline = false;
         sLeg4.hasShadow = true;
         sLeg4.shadowColor = Color.parseColor("#99000000");
+        sLeg4.animationPreset = "fade";
         sLeg4.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("leg_clean_white", "Legacy", "CLEAN MINIMAL WHITE",
-                makeSpan("Simple clear storytelling", null, Color.WHITE, Color.WHITE, null, false, false), sLeg4));
+        allItems.add(new TemplateItem("leg_clean_white", "Legacy", "CLEAN MINIMAL FADE",
+                makeSpan("Simple clear storytelling", "Simple", Color.parseColor("#38BDF8"), Color.WHITE, null, null, false, false), sLeg4));
 
         // 1.5 Royal Blue Pill
         CaptionStyle sLeg5 = new CaptionStyle();
@@ -146,20 +157,22 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sLeg5.backgroundColor = Color.WHITE;
         sLeg5.highlightColor = Color.parseColor("#FACC15");
         sLeg5.textColor = Color.parseColor("#2563EB");
+        sLeg5.animationPreset = "bounce";
         sLeg5.wordsPerChunk = 3;
         allItems.add(new TemplateItem("leg_royal_pill", "Legacy", "ROYAL BLUE PILL",
-                makeSpan("EXPRESS WITH CONFIDENCE", "EXPRESS", Color.parseColor("#FACC15"), Color.parseColor("#2563EB"), Color.WHITE, false, false), sLeg5));
+                makeSpan("EXPRESS WITH CONFIDENCE", "EXPRESS", Color.parseColor("#FACC15"), Color.parseColor("#2563EB"), Color.WHITE, null, false, false), sLeg5));
 
-        // 1.6 Dark Obsidian Pill
+        // 1.6 Dark Obsidian Glow
         CaptionStyle sLeg6 = new CaptionStyle();
         sLeg6.presetId = "leg_obsidian_pill";
-        sLeg6.presetName = "Dark Obsidian Pill";
+        sLeg6.presetName = "Dark Obsidian Glow";
         sLeg6.backgroundColor = Color.BLACK;
-        sLeg6.highlightColor = Color.parseColor("#FDE047");
+        sLeg6.highlightColor = Color.parseColor("#FEF08A");
         sLeg6.textColor = Color.WHITE;
+        sLeg6.animationPreset = "glow";
         sLeg6.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("leg_obsidian_pill", "Legacy", "DARK OBSIDIAN PILL",
-                makeSpan("THE SECRETS OF SUCCESS", "THE", Color.parseColor("#FDE047"), Color.WHITE, Color.BLACK, false, false), sLeg6));
+        allItems.add(new TemplateItem("leg_obsidian_pill", "Legacy", "DARK OBSIDIAN GLOW",
+                makeSpan("THE SECRETS OF SUCCESS", "THE", Color.parseColor("#FEF08A"), Color.WHITE, Color.BLACK, null, false, false), sLeg6));
 
         // ==========================================
         // 2. MODERN (Sleek, Clean & Aesthetic)
@@ -174,21 +187,23 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod1.hasOutline = false;
         sMod1.hasShadow = true;
         sMod1.shadowColor = Color.parseColor("#80000000");
+        sMod1.animationPreset = "fade";
         sMod1.wordsPerChunk = 3;
         allItems.add(new TemplateItem("mod_abdaal", "Modern", "ALI ABDAAL AESTHETIC",
-                makeSpan("Aesthetic productivity habits", "Aesthetic", Color.parseColor("#FEF3C7"), Color.parseColor("#F8FAFC"), null, false, false), sMod1));
+                makeSpan("Aesthetic productivity habits", "Aesthetic", Color.parseColor("#FEF3C7"), Color.parseColor("#F8FAFC"), null, null, false, false), sMod1));
 
-        // 2.2 Electric Cyan Clean
+        // 2.2 Electric Cyan Pop
         CaptionStyle sMod2 = new CaptionStyle();
         sMod2.presetId = "mod_cyan_clean";
-        sMod2.presetName = "Electric Cyan Clean";
+        sMod2.presetName = "Electric Cyan Pop";
         sMod2.fontFamily = "sans-serif-medium";
         sMod2.highlightColor = Color.parseColor("#38BDF8");
         sMod2.textColor = Color.WHITE;
         sMod2.hasShadow = true;
-        sMod2.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("mod_cyan_clean", "Modern", "ELECTRIC CYAN CLEAN",
-                makeSpan("THE FUTURE OF AI", "THE", Color.parseColor("#38BDF8"), Color.WHITE, null, false, false), sMod2));
+        sMod2.animationPreset = "pop";
+        sMod2.wordsPerChunk = 3;
+        allItems.add(new TemplateItem("mod_cyan_clean", "Modern", "ELECTRIC CYAN POP",
+                makeSpan("THE FUTURE OF AI", "THE", Color.parseColor("#38BDF8"), Color.WHITE, null, null, true, false), sMod2));
 
         // 2.3 Velvet Violet
         CaptionStyle sMod3 = new CaptionStyle();
@@ -197,35 +212,40 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod3.backgroundColor = Color.parseColor("#7C3AED");
         sMod3.highlightColor = Color.parseColor("#FBBF24");
         sMod3.textColor = Color.WHITE;
+        sMod3.animationPreset = "bounce";
         sMod3.wordsPerChunk = 3;
         allItems.add(new TemplateItem("mod_velvet_violet", "Modern", "VELVET VIOLET",
-                makeSpan("PREMIUM STUDIO QUALITY", "PREMIUM", Color.parseColor("#FBBF24"), Color.WHITE, Color.parseColor("#7C3AED"), false, false), sMod3));
+                makeSpan("PREMIUM STUDIO QUALITY", "PREMIUM", Color.parseColor("#FBBF24"), Color.WHITE, Color.parseColor("#7C3AED"), null, false, false), sMod3));
 
-        // 2.4 Emerald Growth
+        // 2.4 Emerald Growth Box (Active Word Background Box)
         CaptionStyle sMod4 = new CaptionStyle();
         sMod4.presetId = "mod_emerald_growth";
-        sMod4.presetName = "Emerald Growth";
+        sMod4.presetName = "Emerald Growth Box";
         sMod4.fontFamily = "sans-serif-black";
-        sMod4.highlightColor = Color.parseColor("#10B981");
+        sMod4.highlightBgColor = Color.parseColor("#059669");
+        sMod4.highlightColor = Color.WHITE;
         sMod4.textColor = Color.WHITE;
         sMod4.hasOutline = true;
         sMod4.strokeColor = Color.parseColor("#064E3B");
         sMod4.strokeWidth = 8f;
-        sMod4.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("mod_emerald_growth", "Modern", "EMERALD GROWTH",
-                makeSpan("SCALING TO ONE MILLION", "SCALING", Color.parseColor("#10B981"), Color.WHITE, null, false, false), sMod4));
+        sMod4.animationPreset = "pop";
+        sMod4.wordsPerChunk = 3;
+        allItems.add(new TemplateItem("mod_emerald_growth", "Modern", "EMERALD GROWTH BOX",
+                makeSpan("SCALING TO ONE MILLION", "SCALING", Color.WHITE, Color.WHITE, null, Color.parseColor("#059669"), true, false), sMod4));
 
-        // 2.5 Sunset Fade Italic
+        // 2.5 Sunset Fade Glow
         CaptionStyle sMod5 = new CaptionStyle();
         sMod5.presetId = "mod_sunset_fade";
-        sMod5.presetName = "Sunset Fade Italic";
+        sMod5.presetName = "Sunset Fade Glow";
         sMod5.isItalic = true;
         sMod5.highlightColor = Color.parseColor("#FB923C");
         sMod5.textColor = Color.WHITE;
         sMod5.hasShadow = true;
+        sMod5.shadowColor = Color.parseColor("#EA580C");
+        sMod5.animationPreset = "glow";
         sMod5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("mod_sunset_fade", "Modern", "SUNSET FADE ITALIC",
-                makeSpan("Unstoppable daily momentum", "Unstoppable", Color.parseColor("#FB923C"), Color.WHITE, null, false, true), sMod5));
+        allItems.add(new TemplateItem("mod_sunset_fade", "Modern", "SUNSET FADE GLOW",
+                makeSpan("Unstoppable daily momentum", "Unstoppable", Color.parseColor("#FB923C"), Color.WHITE, null, null, false, true), sMod5));
 
         // 2.6 Glassmorphism Cyan
         CaptionStyle sMod6 = new CaptionStyle();
@@ -234,42 +254,45 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMod6.backgroundColor = Color.parseColor("#66000000");
         sMod6.highlightColor = Color.parseColor("#22D3EE");
         sMod6.textColor = Color.WHITE;
+        sMod6.animationPreset = "pop";
         sMod6.wordsPerChunk = 3;
         allItems.add(new TemplateItem("mod_glass_cyan", "Modern", "GLASSMORPHISM CYAN",
-                makeSpan("TRANSPARENT GLASS UI", "TRANSPARENT", Color.parseColor("#22D3EE"), Color.WHITE, Color.parseColor("#66000000"), false, false), sMod6));
+                makeSpan("TRANSPARENT GLASS UI", "TRANSPARENT", Color.parseColor("#22D3EE"), Color.WHITE, Color.parseColor("#66000000"), null, false, false), sMod6));
 
         // ==========================================
         // 3. VIRAL (TikTok & Reels High-Retention)
         // ==========================================
-        // 3.1 Hormozi Fire
+        // 3.1 Hormozi Fire Pop
         CaptionStyle sVir1 = new CaptionStyle();
         sVir1.presetId = "vir_hormozi";
-        sVir1.presetName = "Hormozi Fire";
+        sVir1.presetName = "Hormozi Fire Pop";
         sVir1.fontFamily = "sans-serif-black";
         sVir1.highlightColor = Color.parseColor("#FACC15");
         sVir1.textColor = Color.parseColor("#EF4444");
         sVir1.hasOutline = true;
         sVir1.strokeColor = Color.BLACK;
         sVir1.strokeWidth = 14f;
+        sVir1.animationPreset = "pop";
         sVir1.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("vir_hormozi", "Viral", "HORMOZI FIRE",
-                makeSpan("MAKE $100K PER MONTH", "MAKE", Color.parseColor("#FACC15"), Color.parseColor("#EF4444"), null, false, false), sVir1));
+        allItems.add(new TemplateItem("vir_hormozi", "Viral", "HORMOZI FIRE POP",
+                makeSpan("MAKE $100K PER MONTH", "MAKE", Color.parseColor("#FACC15"), Color.parseColor("#EF4444"), null, null, true, false), sVir1));
 
-        // 3.2 MrBeast Impact
+        // 3.2 MrBeast Impact Bounce
         CaptionStyle sVir2 = new CaptionStyle();
         sVir2.presetId = "vir_mrbeast";
-        sVir2.presetName = "MrBeast Impact";
+        sVir2.presetName = "MrBeast Impact Bounce";
         sVir2.fontFamily = "sans-serif-black";
         sVir2.highlightColor = Color.parseColor("#22C55E");
         sVir2.textColor = Color.parseColor("#FACC15");
         sVir2.hasOutline = true;
         sVir2.strokeColor = Color.BLACK;
         sVir2.strokeWidth = 14f;
+        sVir2.animationPreset = "bounce";
         sVir2.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("vir_mrbeast", "Viral", "MR BEAST IMPACT",
-                makeSpan("SURVIVED 100 DAYS HERE!", "SURVIVED", Color.parseColor("#22C55E"), Color.parseColor("#FACC15"), null, false, false), sVir2));
+        allItems.add(new TemplateItem("vir_mrbeast", "Viral", "MR BEAST IMPACT BOUNCE",
+                makeSpan("SURVIVED 100 DAYS HERE!", "SURVIVED", Color.parseColor("#22C55E"), Color.parseColor("#FACC15"), null, null, true, false), sVir2));
 
-        // 3.3 TikTok 1-Word Punch
+        // 3.3 TikTok 1-Word Punch (Active Word Background Box)
         CaptionStyle sVir3 = new CaptionStyle();
         sVir3.presetId = "vir_1word_punch";
         sVir3.presetName = "TikTok 1-Word Punch";
@@ -278,10 +301,11 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir3.highlightBgColor = Color.parseColor("#EF4444");
         sVir3.highlightColor = Color.WHITE;
         sVir3.textColor = Color.WHITE;
+        sVir3.animationPreset = "pop";
         sVir3.wordsPerChunk = 1;
         sVir3.singleLine = true;
         allItems.add(new TemplateItem("vir_1word_punch", "Viral", "TIKTOK 1-WORD PUNCH",
-                makeSpan("BOOM!", "BOOM!", Color.WHITE, Color.WHITE, Color.parseColor("#EF4444"), false, false), sVir3));
+                makeSpan("BOOM!", "BOOM!", Color.WHITE, Color.WHITE, null, Color.parseColor("#EF4444"), true, false), sVir3));
 
         // 3.4 Bebas Condensed Hook
         CaptionStyle sVir4 = new CaptionStyle();
@@ -293,34 +317,38 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sVir4.hasOutline = true;
         sVir4.strokeColor = Color.parseColor("#0F172A");
         sVir4.strokeWidth = 10f;
+        sVir4.animationPreset = "pop";
         sVir4.wordsPerChunk = 3;
         allItems.add(new TemplateItem("vir_bebas_hook", "Viral", "BEBAS CONDENSED HOOK",
-                makeSpan("HOW TO GO VIRAL FAST", "HOW", Color.parseColor("#00F2FE"), Color.WHITE, null, false, false), sVir4));
+                makeSpan("HOW TO GO VIRAL FAST", "HOW", Color.parseColor("#00F2FE"), Color.WHITE, null, null, false, false), sVir4));
 
-        // 3.5 Purple Beast Pill
+        // 3.5 Purple Beast Glow
         CaptionStyle sVir5 = new CaptionStyle();
         sVir5.presetId = "vir_purple_beast";
-        sVir5.presetName = "Purple Beast Pill";
+        sVir5.presetName = "Purple Beast Glow";
         sVir5.backgroundColor = Color.parseColor("#8B5CF6");
         sVir5.highlightColor = Color.parseColor("#FACC15");
         sVir5.textColor = Color.WHITE;
+        sVir5.animationPreset = "glow";
         sVir5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("vir_purple_beast", "Viral", "PURPLE BEAST PILL",
-                makeSpan("UNLOCK YOUR SUPERPOWER", "UNLOCK", Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#8B5CF6"), false, false), sVir5));
+        allItems.add(new TemplateItem("vir_purple_beast", "Viral", "PURPLE BEAST GLOW",
+                makeSpan("UNLOCK YOUR SUPERPOWER", "UNLOCK", Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#8B5CF6"), null, false, false), sVir5));
 
-        // 3.6 GaryVee Hustle
+        // 3.6 GaryVee Hustle Box (Active Word Background Box)
         CaptionStyle sVir6 = new CaptionStyle();
         sVir6.presetId = "vir_garyvee";
-        sVir6.presetName = "GaryVee Hustle";
+        sVir6.presetName = "GaryVee Hustle Box";
         sVir6.fontFamily = "sans-serif-black";
-        sVir6.highlightColor = Color.parseColor("#A3E635");
+        sVir6.highlightBgColor = Color.parseColor("#84CC16");
+        sVir6.highlightColor = Color.BLACK;
         sVir6.textColor = Color.WHITE;
         sVir6.hasOutline = true;
         sVir6.strokeColor = Color.BLACK;
         sVir6.strokeWidth = 12f;
+        sVir6.animationPreset = "pop";
         sVir6.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("vir_garyvee", "Viral", "GARYVEE HUSTLE",
-                makeSpan("STOP OVERTHINKING NOW", "STOP", Color.parseColor("#A3E635"), Color.WHITE, null, false, false), sVir6));
+        allItems.add(new TemplateItem("vir_garyvee", "Viral", "GARYVEE HUSTLE BOX",
+                makeSpan("STOP OVERTHINKING NOW", "STOP", Color.BLACK, Color.WHITE, null, Color.parseColor("#84CC16"), true, false), sVir6));
 
         // ==========================================
         // 4. BOLD (Heavy & High-Energy)
@@ -335,14 +363,15 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld1.hasOutline = true;
         sBld1.strokeColor = Color.BLACK;
         sBld1.strokeWidth = 14f;
-        sBld1.wordsPerChunk = 4;
+        sBld1.animationPreset = "bounce";
+        sBld1.wordsPerChunk = 3;
         allItems.add(new TemplateItem("bld_red_alert", "Bold", "RED ALERT STRIKE",
-                makeSpan("DON'T MAKE THIS MISTAKE", "DON'T", Color.parseColor("#DC2626"), Color.WHITE, null, false, false), sBld1));
+                makeSpan("DON'T MAKE THIS MISTAKE", "DON'T", Color.parseColor("#DC2626"), Color.WHITE, null, null, true, false), sBld1));
 
-        // 4.2 Cinematic Gold
+        // 4.2 Cinematic Gold Rush
         CaptionStyle sBld2 = new CaptionStyle();
         sBld2.presetId = "bld_gold_rush";
-        sBld2.presetName = "Cinematic Gold";
+        sBld2.presetName = "Cinematic Gold Rush";
         sBld2.fontFamily = "sans-serif-black";
         sBld2.highlightColor = Color.parseColor("#EAB308");
         sBld2.textColor = Color.parseColor("#FEF08A");
@@ -350,70 +379,76 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sBld2.strokeColor = Color.parseColor("#78350F");
         sBld2.strokeWidth = 8f;
         sBld2.hasShadow = true;
-        sBld2.shadowColor = Color.BLACK;
+        sBld2.shadowColor = Color.parseColor("#D97706");
+        sBld2.animationPreset = "glow";
         sBld2.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("bld_gold_rush", "Bold", "CINEMATIC GOLD",
-                makeSpan("BUILD LASTING WEALTH", "BUILD", Color.parseColor("#EAB308"), Color.parseColor("#FEF08A"), null, false, false), sBld2));
+        allItems.add(new TemplateItem("bld_gold_rush", "Bold", "CINEMATIC GOLD RUSH",
+                makeSpan("BUILD LASTING WEALTH", "BUILD", Color.parseColor("#EAB308"), Color.parseColor("#FEF08A"), null, null, true, false), sBld2));
 
-        // 4.3 Cyberpunk 2077
+        // 4.3 Cyberpunk Neon
         CaptionStyle sBld3 = new CaptionStyle();
         sBld3.presetId = "bld_cyberpunk";
-        sBld3.presetName = "Cyberpunk 2077";
+        sBld3.presetName = "Cyberpunk Neon";
         sBld3.fontFamily = "sans-serif-black";
         sBld3.highlightColor = Color.parseColor("#EC4899");
         sBld3.textColor = Color.parseColor("#06B6D4");
         sBld3.hasOutline = true;
         sBld3.strokeColor = Color.BLACK;
         sBld3.strokeWidth = 12f;
-        sBld3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("bld_cyberpunk", "Bold", "CYBERPUNK 2077",
-                makeSpan("HACK THE MATRIX TODAY", "HACK", Color.parseColor("#EC4899"), Color.parseColor("#06B6D4"), null, false, false), sBld3));
+        sBld3.animationPreset = "pop";
+        sBld3.wordsPerChunk = 3;
+        allItems.add(new TemplateItem("bld_cyberpunk", "Bold", "CYBERPUNK NEON",
+                makeSpan("HACK THE MATRIX TODAY", "HACK", Color.parseColor("#EC4899"), Color.parseColor("#06B6D4"), null, null, true, false), sBld3));
 
-        // 4.4 Heavyweight Boxer
+        // 4.4 Heavyweight Boxer Box (Active Word Background Box)
         CaptionStyle sBld4 = new CaptionStyle();
         sBld4.presetId = "bld_heavyweight";
-        sBld4.presetName = "Heavyweight Boxer";
+        sBld4.presetName = "Heavyweight Boxer Box";
         sBld4.fontFamily = "sans-serif-black";
         sBld4.fontSize = 26;
-        sBld4.highlightColor = Color.parseColor("#FACC15");
+        sBld4.highlightBgColor = Color.parseColor("#FACC15");
+        sBld4.highlightColor = Color.BLACK;
         sBld4.textColor = Color.WHITE;
         sBld4.hasOutline = true;
         sBld4.strokeColor = Color.BLACK;
         sBld4.strokeWidth = 14f;
+        sBld4.animationPreset = "pop";
         sBld4.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("bld_heavyweight", "Bold", "HEAVYWEIGHT BOXER",
-                makeSpan("NEVER EVER GIVE UP", "NEVER", Color.parseColor("#FACC15"), Color.WHITE, null, false, false), sBld4));
+        allItems.add(new TemplateItem("bld_heavyweight", "Bold", "HEAVYWEIGHT BOXER BOX",
+                makeSpan("NEVER EVER GIVE UP", "NEVER", Color.BLACK, Color.WHITE, null, Color.parseColor("#FACC15"), true, false), sBld4));
 
-        // 4.5 Electric Voltage
+        // 4.5 Electric Voltage Bounce
         CaptionStyle sBld5 = new CaptionStyle();
         sBld5.presetId = "bld_voltage";
-        sBld5.presetName = "Electric Voltage";
+        sBld5.presetName = "Electric Voltage Bounce";
         sBld5.fontFamily = "sans-serif-black";
         sBld5.highlightColor = Color.parseColor("#EAB308");
         sBld5.textColor = Color.parseColor("#A855F7");
         sBld5.hasOutline = true;
         sBld5.strokeColor = Color.BLACK;
         sBld5.strokeWidth = 10f;
+        sBld5.animationPreset = "bounce";
         sBld5.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("bld_voltage", "Bold", "ELECTRIC VOLTAGE",
-                makeSpan("MAXIMUM ENERGY OUTPUT", "MAXIMUM", Color.parseColor("#EAB308"), Color.parseColor("#A855F7"), null, false, false), sBld5));
+        allItems.add(new TemplateItem("bld_voltage", "Bold", "ELECTRIC VOLTAGE BOUNCE",
+                makeSpan("MAXIMUM ENERGY OUTPUT", "MAXIMUM", Color.parseColor("#EAB308"), Color.parseColor("#A855F7"), null, null, true, false), sBld5));
 
         // ==========================================
         // 5. MINIMAL (Subtle & Sophisticated)
         // ==========================================
-        // 5.1 Minimalist Whisper
+        // 5.1 Minimalist Whisper Fade
         CaptionStyle sMin1 = new CaptionStyle();
         sMin1.presetId = "min_whisper";
-        sMin1.presetName = "Minimalist Whisper";
+        sMin1.presetName = "Minimalist Whisper Fade";
         sMin1.fontFamily = "sans-serif";
         sMin1.highlightColor = Color.parseColor("#FEF08A");
         sMin1.textColor = Color.WHITE;
         sMin1.hasOutline = false;
         sMin1.hasShadow = true;
         sMin1.shadowColor = Color.parseColor("#66000000");
+        sMin1.animationPreset = "fade";
         sMin1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("min_whisper", "Minimal", "MINIMALIST WHISPER",
-                makeSpan("The art of quiet focus", "The", Color.parseColor("#FEF08A"), Color.WHITE, null, false, false), sMin1));
+        allItems.add(new TemplateItem("min_whisper", "Minimal", "MINIMALIST WHISPER FADE",
+                makeSpan("The art of quiet focus", "The", Color.parseColor("#FEF08A"), Color.WHITE, null, null, false, false), sMin1));
 
         // 5.2 Lavender Breeze
         CaptionStyle sMin2 = new CaptionStyle();
@@ -422,20 +457,22 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin2.backgroundColor = Color.parseColor("#DDD6FE");
         sMin2.highlightColor = Color.parseColor("#1E1B4B");
         sMin2.textColor = Color.parseColor("#4338CA");
+        sMin2.animationPreset = "pop";
         sMin2.wordsPerChunk = 3;
         allItems.add(new TemplateItem("min_lavender", "Minimal", "LAVENDER BREEZE",
-                makeSpan("CREATE MEANINGFUL WORK", "CREATE", Color.parseColor("#1E1B4B"), Color.parseColor("#4338CA"), Color.parseColor("#DDD6FE"), false, false), sMin2));
+                makeSpan("CREATE MEANINGFUL WORK", "CREATE", Color.parseColor("#1E1B4B"), Color.parseColor("#4338CA"), Color.parseColor("#DDD6FE"), null, false, false), sMin2));
 
-        // 5.3 Nordic Ice
+        // 5.3 Nordic Ice Fade
         CaptionStyle sMin3 = new CaptionStyle();
         sMin3.presetId = "min_nordic_ice";
-        sMin3.presetName = "Nordic Ice";
+        sMin3.presetName = "Nordic Ice Fade";
         sMin3.highlightColor = Color.parseColor("#93C5FD");
         sMin3.textColor = Color.WHITE;
         sMin3.hasOutline = false;
+        sMin3.animationPreset = "fade";
         sMin3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("min_nordic_ice", "Minimal", "NORDIC ICE",
-                makeSpan("Simplicity in every detail", "Simplicity", Color.parseColor("#93C5FD"), Color.WHITE, null, false, false), sMin3));
+        allItems.add(new TemplateItem("min_nordic_ice", "Minimal", "NORDIC ICE FADE",
+                makeSpan("Simplicity in every detail", "Simplicity", Color.parseColor("#93C5FD"), Color.WHITE, null, null, false, false), sMin3));
 
         // 5.4 Subtle Black Pill
         CaptionStyle sMin4 = new CaptionStyle();
@@ -444,28 +481,30 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sMin4.backgroundColor = Color.BLACK;
         sMin4.highlightColor = Color.parseColor("#FACC15");
         sMin4.textColor = Color.WHITE;
+        sMin4.animationPreset = "bounce";
         sMin4.wordsPerChunk = 3;
         allItems.add(new TemplateItem("min_black_pill", "Minimal", "SUBTLE BLACK PILL",
-                makeSpan("Daily mindful journaling", "Daily", Color.parseColor("#FACC15"), Color.WHITE, Color.BLACK, false, false), sMin4));
+                makeSpan("Daily mindful journaling", "Daily", Color.parseColor("#FACC15"), Color.WHITE, Color.BLACK, null, false, false), sMin4));
 
-        // 5.5 Monochrome Studio
+        // 5.5 Monochrome Studio Pop
         CaptionStyle sMin5 = new CaptionStyle();
         sMin5.presetId = "min_monochrome";
-        sMin5.presetName = "Monochrome Studio";
+        sMin5.presetName = "Monochrome Studio Pop";
         sMin5.highlightColor = Color.WHITE;
         sMin5.textColor = Color.parseColor("#94A3B8");
         sMin5.hasOutline = false;
+        sMin5.animationPreset = "pop";
         sMin5.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("min_monochrome", "Minimal", "MONOCHROME STUDIO",
-                makeSpan("BLACK AND WHITE FOCUS", "BLACK", Color.WHITE, Color.parseColor("#94A3B8"), null, false, false), sMin5));
+        allItems.add(new TemplateItem("min_monochrome", "Minimal", "MONOCHROME STUDIO POP",
+                makeSpan("BLACK AND WHITE FOCUS", "BLACK", Color.WHITE, Color.parseColor("#94A3B8"), null, null, false, false), sMin5));
 
         // ==========================================
         // 6. COOL (Neon, Pop & Synthwave)
         // ==========================================
-        // 6.1 Neon Tokyo
+        // 6.1 Neon Tokyo Glow
         CaptionStyle sCl1 = new CaptionStyle();
         sCl1.presetId = "cl_neon_tokyo";
-        sCl1.presetName = "Neon Tokyo";
+        sCl1.presetName = "Neon Tokyo Glow";
         sCl1.fontFamily = "sans-serif-black";
         sCl1.highlightColor = Color.parseColor("#F43F5E");
         sCl1.textColor = Color.parseColor("#06B6D4");
@@ -474,9 +513,10 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl1.strokeWidth = 10f;
         sCl1.hasShadow = true;
         sCl1.shadowColor = Color.parseColor("#F43F5E");
-        sCl1.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("cl_neon_tokyo", "Cool", "NEON TOKYO",
-                makeSpan("NEON LIGHTS IN SHIBUYA", "NEON", Color.parseColor("#F43F5E"), Color.parseColor("#06B6D4"), null, false, false), sCl1));
+        sCl1.animationPreset = "glow";
+        sCl1.wordsPerChunk = 3;
+        allItems.add(new TemplateItem("cl_neon_tokyo", "Cool", "NEON TOKYO GLOW",
+                makeSpan("NEON LIGHTS IN SHIBUYA", "NEON", Color.parseColor("#F43F5E"), Color.parseColor("#06B6D4"), null, null, true, false), sCl1));
 
         // 6.2 Hot Pink Pop
         CaptionStyle sCl2 = new CaptionStyle();
@@ -485,36 +525,39 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl2.backgroundColor = Color.parseColor("#EC4899");
         sCl2.highlightColor = Color.BLACK;
         sCl2.textColor = Color.WHITE;
-        sCl2.wordsPerChunk = 4;
+        sCl2.animationPreset = "pop";
+        sCl2.wordsPerChunk = 3;
         allItems.add(new TemplateItem("cl_pink_pop", "Cool", "HOT PINK POP",
-                makeSpan("TRENDING ON SOCIAL MEDIA", "TRENDING", Color.BLACK, Color.WHITE, Color.parseColor("#EC4899"), false, false), sCl2));
+                makeSpan("TRENDING ON SOCIAL MEDIA", "TRENDING", Color.BLACK, Color.WHITE, Color.parseColor("#EC4899"), null, true, false), sCl2));
 
-        // 6.3 Ice & Fire
+        // 6.3 Ice & Fire Bounce
         CaptionStyle sCl3 = new CaptionStyle();
         sCl3.presetId = "cl_ice_fire";
-        sCl3.presetName = "Ice & Fire";
+        sCl3.presetName = "Ice & Fire Bounce";
         sCl3.fontFamily = "sans-serif-black";
         sCl3.highlightColor = Color.parseColor("#38BDF8");
         sCl3.textColor = Color.parseColor("#FB923C");
         sCl3.hasOutline = true;
         sCl3.strokeColor = Color.BLACK;
         sCl3.strokeWidth = 10f;
+        sCl3.animationPreset = "bounce";
         sCl3.wordsPerChunk = 4;
-        allItems.add(new TemplateItem("cl_ice_fire", "Cool", "ICE & FIRE",
-                makeSpan("FREEZING COLD VS HOT", "FREEZING", Color.parseColor("#38BDF8"), Color.parseColor("#FB923C"), null, false, false), sCl3));
+        allItems.add(new TemplateItem("cl_ice_fire", "Cool", "ICE & FIRE BOUNCE",
+                makeSpan("FREEZING COLD VS HOT", "FREEZING", Color.parseColor("#38BDF8"), Color.parseColor("#FB923C"), null, null, true, false), sCl3));
 
-        // 6.4 Retro 80s Synthwave
+        // 6.4 Retro 80s Synthwave Glow
         CaptionStyle sCl4 = new CaptionStyle();
         sCl4.presetId = "cl_synthwave";
-        sCl4.presetName = "Retro 80s Synthwave";
+        sCl4.presetName = "Retro 80s Synthwave Glow";
         sCl4.isItalic = true;
         sCl4.highlightColor = Color.parseColor("#FDE047");
         sCl4.textColor = Color.parseColor("#E11D48");
         sCl4.hasShadow = true;
         sCl4.shadowColor = Color.parseColor("#581C87");
+        sCl4.animationPreset = "glow";
         sCl4.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("cl_synthwave", "Cool", "RETRO 80S SYNTHWAVE",
-                makeSpan("SYNTHWAVE SUNSET VIBES", "SYNTHWAVE", Color.parseColor("#FDE047"), Color.parseColor("#E11D48"), null, false, true), sCl4));
+        allItems.add(new TemplateItem("cl_synthwave", "Cool", "RETRO 80S SYNTHWAVE GLOW",
+                makeSpan("SYNTHWAVE SUNSET VIBES", "SYNTHWAVE", Color.parseColor("#FDE047"), Color.parseColor("#E11D48"), null, null, false, true), sCl4));
 
         // 6.5 Ocean Wave
         CaptionStyle sCl5 = new CaptionStyle();
@@ -523,54 +566,59 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sCl5.backgroundColor = Color.parseColor("#1D4ED8");
         sCl5.highlightColor = Color.parseColor("#67E8F9");
         sCl5.textColor = Color.WHITE;
-        sCl5.wordsPerChunk = 4;
+        sCl5.animationPreset = "bounce";
+        sCl5.wordsPerChunk = 3;
         allItems.add(new TemplateItem("cl_ocean_wave", "Cool", "OCEAN WAVE",
-                makeSpan("DEEP BLUE OCEAN FLOW", "DEEP", Color.parseColor("#67E8F9"), Color.WHITE, Color.parseColor("#1D4ED8"), false, false), sCl5));
+                makeSpan("DEEP BLUE OCEAN FLOW", "DEEP", Color.parseColor("#67E8F9"), Color.WHITE, Color.parseColor("#1D4ED8"), null, false, false), sCl5));
 
-        // 6.6 Acid Lime Pop
+        // 6.6 Acid Lime Punch Box (Active Word Background Box)
         CaptionStyle sCl6 = new CaptionStyle();
         sCl6.presetId = "cl_acid_lime";
-        sCl6.presetName = "Acid Lime Pop";
+        sCl6.presetName = "Acid Lime Punch Box";
         sCl6.fontFamily = "sans-serif-black";
-        sCl6.highlightColor = Color.parseColor("#84CC16");
+        sCl6.highlightBgColor = Color.parseColor("#84CC16");
+        sCl6.highlightColor = Color.BLACK;
         sCl6.textColor = Color.parseColor("#EA580C");
         sCl6.hasOutline = true;
         sCl6.strokeColor = Color.BLACK;
         sCl6.strokeWidth = 10f;
+        sCl6.animationPreset = "pop";
         sCl6.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("cl_acid_lime", "Cool", "ACID LIME POP",
-                makeSpan("EXTREME VIRAL FORMULA", "EXTREME", Color.parseColor("#84CC16"), Color.parseColor("#EA580C"), null, false, false), sCl6));
+        allItems.add(new TemplateItem("cl_acid_lime", "Cool", "ACID LIME PUNCH BOX",
+                makeSpan("EXTREME VIRAL FORMULA", "EXTREME", Color.BLACK, Color.parseColor("#EA580C"), null, Color.parseColor("#84CC16"), true, false), sCl6));
 
         // ==========================================
         // 7. SPLIT VIEW (2-Line Multi-Structure)
         // ==========================================
-        // 7.1 Dynamic Dual
+        // 7.1 Dynamic Dual Pop
         CaptionStyle sSp1 = new CaptionStyle();
         sSp1.presetId = "sp_dynamic_dual";
-        sSp1.presetName = "Dynamic Dual";
+        sSp1.presetName = "Dynamic Dual Pop";
         sSp1.fontFamily = "sans-serif-black";
         sSp1.highlightColor = Color.parseColor("#FACC15");
         sSp1.textColor = Color.WHITE;
         sSp1.hasOutline = true;
         sSp1.strokeColor = Color.BLACK;
         sSp1.strokeWidth = 10f;
+        sSp1.animationPreset = "pop";
         sSp1.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("sp_dynamic_dual", "Split view", "DYNAMIC DUAL 2-LINE",
-                makeSpan("MASTER YOUR MIND\nCONQUER THE WORLD", "MASTER", Color.parseColor("#FACC15"), Color.WHITE, null, false, false), sSp1));
+        allItems.add(new TemplateItem("sp_dynamic_dual", "Split view", "DYNAMIC DUAL POP",
+                makeSpan("MASTER YOUR MIND\nCONQUER THE WORLD", "MASTER", Color.parseColor("#FACC15"), Color.WHITE, null, null, true, false), sSp1));
 
-        // 7.2 Cyan Strike 2-Line
+        // 7.2 Cyan Strike Bounce
         CaptionStyle sSp2 = new CaptionStyle();
         sSp2.presetId = "sp_cyan_strike";
-        sSp2.presetName = "Cyan Strike 2-Line";
+        sSp2.presetName = "Cyan Strike Bounce";
         sSp2.fontFamily = "sans-serif-black";
-        sSp2.highlightColor = Color.parseColor("#38BDF8");
-        sSp2.textColor = Color.parseColor("#EF4444");
+        sSp2.highlightColor = Color.parseColor("#EF4444");
+        sSp2.textColor = Color.parseColor("#38BDF8");
         sSp2.hasOutline = true;
         sSp2.strokeColor = Color.BLACK;
         sSp2.strokeWidth = 12f;
+        sSp2.animationPreset = "bounce";
         sSp2.wordsPerChunk = 2;
-        allItems.add(new TemplateItem("sp_cyan_strike", "Split view", "CYAN STRIKE 2-LINE",
-                makeSpan("START TODAY\nNOT TOMORROW", "START TODAY", Color.parseColor("#38BDF8"), Color.parseColor("#EF4444"), null, false, false), sSp2));
+        allItems.add(new TemplateItem("sp_cyan_strike", "Split view", "CYAN STRIKE BOUNCE",
+                makeSpan("START TODAY\nNOT TOMORROW", "START TODAY", Color.parseColor("#EF4444"), Color.parseColor("#38BDF8"), null, null, true, false), sSp2));
 
         // 7.3 Minimal Dark Box 2-Line
         CaptionStyle sSp3 = new CaptionStyle();
@@ -579,22 +627,27 @@ public class TemplateCardAdapter extends RecyclerView.Adapter<TemplateCardAdapte
         sSp3.backgroundColor = Color.parseColor("#B3000000");
         sSp3.highlightColor = Color.parseColor("#FACC15");
         sSp3.textColor = Color.WHITE;
+        sSp3.animationPreset = "pop";
         sSp3.wordsPerChunk = 4;
         allItems.add(new TemplateItem("sp_dark_box", "Split view", "MINIMAL DARK BOX 2-LINE",
-                makeSpan("Focus on what matters\nIgnore all the noise", "Focus", Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#B3000000"), false, false), sSp3));
+                makeSpan("Focus on what matters\nIgnore all the noise", "Focus", Color.parseColor("#FACC15"), Color.WHITE, Color.parseColor("#B3000000"), null, false, false), sSp3));
 
-        // 7.4 Emerald Tech 2-Line
+        // 7.4 Emerald Tech Box (Active Word Background Box)
         CaptionStyle sSp4 = new CaptionStyle();
         sSp4.presetId = "sp_emerald_tech";
-        sSp4.presetName = "Emerald Tech 2-Line";
+        sSp4.presetName = "Emerald Tech Box";
         sSp4.fontFamily = "sans-serif-black";
-        sSp4.highlightColor = Color.parseColor("#10B981");
+        sSp4.highlightBgColor = Color.parseColor("#10B981");
+        sSp4.highlightColor = Color.BLACK;
         sSp4.textColor = Color.WHITE;
         sSp4.hasOutline = true;
         sSp4.strokeColor = Color.BLACK;
+        sSp4.shadowColor = Color.parseColor("#10B981");
+        sSp4.hasShadow = true;
+        sSp4.animationPreset = "glow";
         sSp4.wordsPerChunk = 3;
-        allItems.add(new TemplateItem("sp_emerald_tech", "Split view", "EMERALD TECH 2-LINE",
-                makeSpan("INNOVATION IN TECH\nTHE NEXT DECADE", "INNOVATION", Color.parseColor("#10B981"), Color.WHITE, null, false, false), sSp4));
+        allItems.add(new TemplateItem("sp_emerald_tech", "Split view", "EMERALD TECH BOX",
+                makeSpan("INNOVATION IN TECH\nTHE NEXT DECADE", "INNOVATION", Color.BLACK, Color.WHITE, null, Color.parseColor("#10B981"), true, false), sSp4));
     }
 
     public CaptionStyle getSelectedStyle() {
